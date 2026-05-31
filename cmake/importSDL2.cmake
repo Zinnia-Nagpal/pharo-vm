@@ -20,13 +20,8 @@ function(download_SDL2)
     else()
       add_third_party_dependency("SDL2-2.32.6")
     endif()
-<<<<<<< HEAD
-  elseif(OSX)   
-    add_third_party_dependency("SDL2-2.32.6")
-=======
   elseif(OSX)
     add_third_party_dependency("SDL2-2.32.6")    
->>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba
   else() #LINUX
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
       add_third_party_dependency("SDL2-2.0.14")

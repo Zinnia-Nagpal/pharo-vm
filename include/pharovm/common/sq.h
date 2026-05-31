@@ -171,21 +171,6 @@ sqInt ioExitWithErrorCode(int);
 sqInt crashInThisOrAnotherThread(sqInt flags);
 sqInt ioSeconds(void);
 sqInt ioSecondsNow(void);
-<<<<<<< HEAD:extracted/vm/include/common/sq.h
-sqInt ioShowDisplay(sqInt dispBitsIndex, sqInt width, sqInt height, sqInt depth,
-		    sqInt affectedL, sqInt affectedR, sqInt affectedT, sqInt affectedB);
-sqInt ioHasDisplayDepth(sqInt depth);
-sqInt ioSetDisplayMode(sqInt width, sqInt height, sqInt depth, sqInt fullscreenFlag);
-char* ioGetLogDirectory(void);
-sqInt ioSetLogDirectoryOfSize(void* lblIndex, sqInt sz);
-char* ioGetWindowLabel(void);
-sqInt ioSetWindowLabelOfSize(void *lblIndex, sqInt sz);
-sqInt ioGetWindowWidth(void);
-sqInt ioGetWindowHeight(void);
-sqInt ioSetWindowWidthHeight(sqInt w, sqInt h);
-sqInt ioIsWindowObscured(void);
-=======
->>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba:include/pharovm/common/sq.h
 
 sqInt ioRelinquishProcessorForMicroseconds(sqInt microSeconds);
 

@@ -78,10 +78,7 @@ static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * pa
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
 static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxSlotsForNewSpaceAlloc(const char *argument, VMParameters * params);
-<<<<<<< HEAD
-=======
 static VMErrorCode processStackPageSizeOption(const char *argument, VMParameters * params);
->>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba
 static VMErrorCode processWorkingDirectory(const char *argument, VMParameters * params);
 static VMErrorCode processAvoidSearchingSegmentsWithPinnedObjects(const char *argument, VMParameters * params);
 

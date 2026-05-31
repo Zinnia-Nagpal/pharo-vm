@@ -72,10 +72,7 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
 	setDesiredEdenBytes(parameters->edenSize);
 	setMinimalPermSpaceSize(parameters->minPermSpaceSize);
-<<<<<<< HEAD
-=======
 	setDesiredStackPageBytes(parameters->stackPageSize);
->>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba
 	setMaxSlotsForNewSpaceAlloc(parameters->maxSlotsForNewSpaceAlloc);
 
 	setAvoidSearchingSegmentsWithPinnedObjects(parameters->avoidSearchingSegmentsWithPinnedObjects);
