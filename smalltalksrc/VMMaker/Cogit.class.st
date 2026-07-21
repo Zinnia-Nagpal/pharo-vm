@@ -1211,11 +1211,6 @@ Cogit class >> mustBeGlobalAndExport: var [
 
 ]
 
-{ #category : 'translation' }
-Cogit class >> namesOfVariablesToLocalize [
-	^#()
-]
-
 { #category : 'documentation' }
 Cogit class >> notesAndQueries [
 	"Mitigating cost of bytecode to machinecode pc mapping.

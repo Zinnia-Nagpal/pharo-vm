@@ -270,6 +270,11 @@ VMClass class >> mustBeGlobalInFile: var [
 ]
 
 { #category : 'translation' }
+VMClass class >> namesOfVariablesToLocalize [
+	^#()
+]
+
+{ #category : 'translation' }
 VMClass class >> noteCompilationOf: aSelector meta: isMeta [
 	"note the recompiliation by resetting the timeStamp "
 	timeStamp := Time totalSeconds.

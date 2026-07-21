@@ -731,8 +731,13 @@ VMMaker >> generateExternalPlugins [
 VMMaker >> generateExtraFile [
 
 	| cg |
-	cg := CCodeGenerator new.
+	cg := self createCogitCodeGenerator.
+	cg vmClass: ExtraVMClass.
 	cg addClass: ExtraVMClass.
+
+	cg inferTypes.
+	cg 	prepareMethods.
+	
 	cg
 		storeCodeOnFile: (self sourceFilePathFor: ExtraVMClass sourceFileName)
 		doInlining: self doInlining.
