@@ -151,7 +151,8 @@ CoInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'"cogmethod.h"'.
 	aCCodeGenerator
 		addHeaderFile: '"cointerp.h"';
-		addHeaderFile:'"cogit.h"'.
+		addHeaderFile: '"extra.h"';
+		addHeaderFile: '"cogit.h"'.
 	aCCodeGenerator vmClass
 		declareInterpreterVersionIn: aCCodeGenerator
 		defaultName: aCCodeGenerator interpreterVersion.

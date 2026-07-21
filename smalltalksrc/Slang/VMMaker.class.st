@@ -729,11 +729,16 @@ VMMaker >> generateExternalPlugins [
 
 { #category : 'generate sources' }
 VMMaker >> generateExtraFile [
-		
+
 	| cg |
 	cg := CCodeGenerator new.
 	cg addClass: ExtraVMClass.
-	cg storeCodeOnFile: (self sourceFilePathFor: ExtraVMClass sourceFileName) doInlining: self doInlining
+	cg
+		storeCodeOnFile: (self sourceFilePathFor: ExtraVMClass sourceFileName)
+		doInlining: self doInlining.
+	cg
+		storeAPIExportHeader: ExtraVMClass apiExportHeaderName
+		OnFile: (self includeFilePathFor: ExtraVMClass apiExportHeaderName)
 ]
 
 { #category : 'generate sources' }

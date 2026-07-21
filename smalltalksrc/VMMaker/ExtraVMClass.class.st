@@ -7,9 +7,15 @@ Class {
 }
 
 { #category : 'translation' }
+ExtraVMClass class >> apiExportHeaderName [
+
+	^ 'extra.h'
+]
+
+{ #category : 'translation' }
 ExtraVMClass class >> sourceFileName [
 
-	^ #'extra.c'
+	^ 'extra.c'
 ]
 
 { #category : 'accessing - structure variables' }

@@ -446,6 +446,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '"vmMemoryMap.h"';
 		addHeaderFile: '"vmRememberedSet.h"';
 		addHeaderFile: '"cointerp.h"';
+		addHeaderFile: '"extra.h"';
 		addHeaderFile: '"cogit.h"';
 		addHeaderFile: '<stdint.h>'.
 
