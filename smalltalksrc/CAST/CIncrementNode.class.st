@@ -3,8 +3,7 @@ Class {
 	#superclass : 'CExpressionNode',
 	#instVars : [
 		'object',
-		'prefix',
-		'plusPlusToken'
+		'prefix'
 	],
 	#category : 'CAST-Nodes',
 	#package : 'CAST',
@@ -47,12 +46,6 @@ CIncrementNode >> object: aCGLRAbstractNode [
 	object := aCGLRAbstractNode.
 	self object notNil
 		ifTrue: [ self object parent: self ]
-]
-
-{ #category : 'accessing' }
-CIncrementNode >> plusPlusToken: aSmaCCToken [ 
-
-	plusPlusToken := aSmaCCToken
 ]
 
 { #category : 'accessing' }

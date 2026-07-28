@@ -365,7 +365,7 @@ SmartSyntaxPluginTMethod >> rcvrSpec [
 	^rcvrSpec
 ]
 
-{ #category : 'transformations' }
+{ #category : 'transforming' }
 SmartSyntaxPluginTMethod >> recordDeclarationsIn: aCCodeGen [
 
 	"Record C type declarations of the forms
@@ -438,7 +438,7 @@ SmartSyntaxPluginTMethod >> recordDeclarationsIn: aCCodeGen [
 					put: (theClass ccgDeclareCForVar: stmt args first value asString) ].
 			stmt selector == #returnTypeC: ifTrue: [ 
 				isDeclaration := true.
-				self returnType: stmt args last value ] ].
+				returnType := stmt args last value ] ].
 		isDeclaration ifFalse: [ newStatements add: stmt ] ].
 	parseTree statements: newStatements asArray
 ]
@@ -476,7 +476,7 @@ SmartSyntaxPluginTMethod >> setSelector: sel definingClass: class args: argList 
 
 	selector := sel.
 	definingClass := class.
-	self returnType: #sqInt. 	 "assume return type is sqInt for now"
+	returnType := #sqInt. 	 "assume return type is sqInt for now"
 	args := argList asOrderedCollection collect: [:arg | arg name].	
 	declarations := Dictionary new.
 	primitive := aNumber.

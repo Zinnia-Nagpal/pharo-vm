@@ -47,8 +47,7 @@ CCompoundStatementNode >> acceptVisitor: anAbstractVisitor [
 { #category : 'adding' }
 CCompoundStatementNode >> add: aStatement [
 
-	statements add: aStatement.
-	aStatement parent: self
+	statements add: aStatement
 ]
 
 { #category : 'adding' }
@@ -88,19 +87,8 @@ CCompoundStatementNode >> initialize [
 	super initialize.
 	statements := OrderedCollection new: 2.
 	declarations := OrderedCollection new: 2.
-	needsBrackets := true
-]
-
-{ #category : 'testing' }
-CCompoundStatementNode >> isAtEndOfStatement [
-	"Signals whether the end of this block (think of the closing brace) is at the
-	 end of a statement. This is only false when the block is followed by a
-	 `while(..);` or an `else`."
-	parent ifNil: [ ^ true ].
-	parent isDoWhile ifTrue: [ ^ false ].
-	parent isIf ifTrue: [
-		^ parent else = self or: [ parent else isNil ] ].
-	^ true
+	needsBrackets := true.
+	needsSeparator := false
 ]
 
 { #category : 'testing' }
@@ -150,6 +138,12 @@ CCompoundStatementNode >> needsBrackets [
 CCompoundStatementNode >> needsBrackets: anObject [
 
 	needsBrackets := anObject
+]
+
+{ #category : 'testing' }
+CCompoundStatementNode >> needsTrailingSemicolon [
+
+	^ false
 ]
 
 { #category : 'generated' }

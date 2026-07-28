@@ -1057,7 +1057,7 @@ CogARMv8Compiler >> computeMaximumSize [
 														ifFalse: [self literalLoadInstructionBytes + 4]]]].
 
 		[CmpCqR]				-> [| immediate |
-			immediate := (operands at: 0) signedIntFromLong64 abs.
+			immediate := (operands at: 0) abs.
 			^ ((immediate bitAnd: 16rfff) = immediate
 				or: [ (immediate << 12 >> 12 bitAnd: 16rFFF) = immediate ])
 					ifTrue: [ 4]
@@ -3910,19 +3910,15 @@ CogARMv8Compiler >> fcmpFType: ftype leftRegister: firstRegister rightRegister: 
 { #category : 'concretize' }
 CogARMv8Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
-	
-	self cppIf: FEATURE_JIT_SIMD
-		ifTrue: [ | fillLoop |
-			cogit DupS: 64 R: fillReg Vr: vectorRegister.
-			"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
-			This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
-			using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
-			the end of the Eden space, as after it we reserve additional headroom."
-			fillLoop := cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
-			cogit CmpR: startMemoryAddr R: endMemoryAddr.
-			cogit JumpAbove: fillLoop.
-		] ifFalse: [ 
-			super fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister ].
+	| fillLoop |
+	cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+	the end of the Eden space, as after it we reserve additional headroom."
+	fillLoop := cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
 	
 	^0 "Necessary to keep Slang happy"
 ]
@@ -4713,13 +4709,11 @@ CogARMv8Compiler >> ldrSize: is64Bits baseRegister: baseReg unsignedOffset: imme
 	
 	LDR <Xt>, [<Xn|SP>{, #<pimm>}]"
 	
-	self assert: (is64Bits = 0 or: [ is64Bits = 1 ]).
 	self assert: immediate12bitValue >= 0.
 	^ 1 << 31
 		bitOr: ((is64Bits bitAnd: 1) << 30
 		bitOr: (2r11100101 << 22
-		bitOr: ((immediate12bitValue /
-			(is64Bits = 1 ifTrue: [8] ifFalse: [4]) bitAnd: 2r111111111111) << 10
+		bitOr: ((immediate12bitValue / 8 bitAnd: 2r111111111111) << 10
 		bitOr:((baseReg bitAnd: 2r11111) << 5
 		bitOr: (destinationRegister bitAnd: 2r11111)))))
 ]
@@ -5548,6 +5542,32 @@ CogARMv8Compiler >> rewriteBranch: conditionalBranch withNewOffset: newOffset [
 ]
 
 { #category : 'inline cacheing' }
+CogARMv8Compiler >> rewriteCPICJumpAt: callSiteReturnAddress target: callTargetAddress [
+	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
+	jumps in the prototype CPIC to suit each use,.   
+	Answer the extent of the code change which is used to compute the range of the icache to flush."
+	<var: #callSiteReturnAddress type: #usqInt>
+	<var: #callTargetAddress type: #usqInt>
+	| callDistance instr |
+
+	callTargetAddress >= cogit minCallAddress
+		ifFalse: [self error: 'linking callsite to invalid address'].
+
+	callDistance := (callTargetAddress - (callSiteReturnAddress - 4 "return offset")).
+	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates, yet"
+
+	instr := self instructionBeforeAddress: callSiteReturnAddress.
+	self assert: (self instructionIsConditionalBranch: instr).
+
+	objectMemory
+		long32At: (self instructionAddressBefore: callSiteReturnAddress)
+		put: (self branchCondition: (self extractConditionFromB: instr) offset: callDistance).
+
+	self assert: (self extractOffsetFromConditionalBranch: ((self branchCondition: (self extractConditionFromB: instr) offset: callDistance))) = callDistance.
+	^4
+]
+
+{ #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al,.   
@@ -5574,7 +5594,7 @@ CogARMv8Compiler >> rewriteCallFullAt: callSiteReturnAddress target: callTargetA
 { #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteConditionalJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype PIC to suit each use,.   
+	jumps in the prototype CPIC to suit each use,.   
 	Answer the extent of the code change which is used to compute the range of the icache to flush."
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
@@ -5632,7 +5652,7 @@ CogARMv8Compiler >> rewriteJumpFullAt: callSiteReturnAddress target: callTargetA
 { #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype PIC to suit each use,.   
+	jumps in the prototype CPIC to suit each use,.   
 	Answer the extent of the code change which is used to compute the range of the icache to flush."
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
@@ -5640,35 +5660,9 @@ CogARMv8Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetA
 ]
 
 { #category : 'inline cacheing' }
-CogARMv8Compiler >> rewritePICJumpAt: callSiteReturnAddress target: callTargetAddress [
-	"Rewrite a jump instruction to call a different target.  This variant is used to reset the jumps in the prototype PIC to suit each use,.   
-	Answer the extent of the code change which is used to compute the range of the icache to flush."
-	
-	<var: #callSiteReturnAddress type: #usqInt>
-	<var: #callTargetAddress type: #usqInt>
-	| callDistance instr |
-
-	callTargetAddress >= cogit minCallAddress
-		ifFalse: [self error: 'linking callsite to invalid address'].
-
-	callDistance := (callTargetAddress - (callSiteReturnAddress - 4 "return offset")).
-	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates, yet"
-
-	instr := self instructionBeforeAddress: callSiteReturnAddress.
-	self assert: (self instructionIsConditionalBranch: instr).
-
-	objectMemory
-		long32At: (self instructionAddressBefore: callSiteReturnAddress)
-		put: (self branchCondition: (self extractConditionFromB: instr) offset: callDistance).
-
-	self assert: (self extractOffsetFromConditionalBranch: ((self branchCondition: (self extractConditionFromB: instr) offset: callDistance))) = callDistance.
-	^4
-]
-
-{ #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call/jump instruction to call a different target.  This variant is used to link PICs
-	 in ceSendMiss et al, and to rewrite call/jumps in PICs.
+	 in ceSendMiss et al, and to rewrite call/jumps in CPICs.
 	Answer the extent of
 	 the code change which is used to compute the range of the icache to flush."
 	<var: #callSiteReturnAddress type: #usqInt>

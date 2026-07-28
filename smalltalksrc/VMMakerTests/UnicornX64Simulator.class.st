@@ -70,6 +70,12 @@ UnicornX64Simulator >> createUnicorn [
 	^ Unicorn x8664
 ]
 
+{ #category : 'disassembling' }
+UnicornX64Simulator >> disassembler [
+	
+	^ LLVMDisassembler amd64
+]
+
 { #category : 'registers' }
 UnicornX64Simulator >> doublePrecisionFloatingPointRegister0 [
 
@@ -125,12 +131,6 @@ UnicornX64Simulator >> initializeRegisterAliases [
 		at: #r9 put: #sendNumberOfArgumentsRegister;
 		at: #rbx put: #baseRegister;
 		at: #rbp put: #framePointerRegister
-]
-
-{ #category : 'disassembling' }
-UnicornX64Simulator >> instantiateDisassembler [
-	
-	^ LLVMDisassembler amd64
 ]
 
 { #category : 'virtual-registers' }

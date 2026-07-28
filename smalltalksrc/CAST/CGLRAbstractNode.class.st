@@ -1,6 +1,9 @@
 Class {
 	#name : 'CGLRAbstractNode',
 	#superclass : 'SmaCCParseNode',
+	#instVars : [
+		'needsSeparator'
+	],
 	#category : 'CAST',
 	#package : 'CAST'
 }
@@ -41,6 +44,13 @@ CGLRAbstractNode >> comments [
 ]
 
 { #category : 'testing' }
+CGLRAbstractNode >> initialize [
+
+	super initialize.
+	needsSeparator := true
+]
+
+{ #category : 'testing' }
 CGLRAbstractNode >> isBinaryOperation [
 	
 	^ false
@@ -66,11 +76,6 @@ CGLRAbstractNode >> isCompoundStatement [
 { #category : 'testing' }
 CGLRAbstractNode >> isConstant [
 	
-	^ false
-]
-
-{ #category : 'testing' }
-CGLRAbstractNode >> isDoWhile [
 	^ false
 ]
 
@@ -111,11 +116,6 @@ CGLRAbstractNode >> isIdentifier [
 ]
 
 { #category : 'testing' }
-CGLRAbstractNode >> isIf [
-	^ false
-]
-
-{ #category : 'testing' }
 CGLRAbstractNode >> isLeaf [
 	
 	^ false
@@ -144,4 +144,22 @@ CGLRAbstractNode >> last: aReplacement [
 	
 	"I replace myself by the node as argument"
 	^ aReplacement
+]
+
+{ #category : 'accessing' }
+CGLRAbstractNode >> needsSeparator [
+
+	^ needsSeparator
+]
+
+{ #category : 'accessing' }
+CGLRAbstractNode >> needsSeparator: aBoolean [
+
+	needsSeparator := aBoolean
+]
+
+{ #category : 'testing' }
+CGLRAbstractNode >> needsTrailingSemicolon [ 
+	
+	^ true
 ]

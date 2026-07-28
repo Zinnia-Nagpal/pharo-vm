@@ -57,16 +57,6 @@ VMSimpleStackBasedCogitAbstractTest class >> wordSize64Parameters [
 	^ ParametrizedTestMatrix new
 		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
 		addCase: { #ISA -> #'X64'. #wordSize -> 8};
-		addCase: { #ISA -> #'riscv64'. #wordSize -> 8 };
-		yourself
-]
-
-{ #category : 'building suites' }
-VMSimpleStackBasedCogitAbstractTest class >> wordSize64SIMDParameters [
-
-	^ ParametrizedTestMatrix new
-		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
-		addCase: { #ISA -> #'X64'. #wordSize -> 8};
 		yourself
 ]
 
@@ -528,7 +518,6 @@ VMSimpleStackBasedCogitAbstractTest >> jitOptions [
 	^ Dictionary newFromPairs: { 
 		#ISA. isa.
 		#IMMUTABILITY. false.
-		#COGVM. true.
 		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.	
 		#ObjectMemory. self memoryClass name }
 ]
@@ -641,7 +630,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 	"If the cogit is the StackToRegisterMapping the arguments should go in the registers also"
 	(cogit isKindOf: StackToRegisterMappingCogit) ifTrue: [
 		arguments size >= 1 ifTrue: [ self machineSimulator arg0RegisterValue: (arguments at: 1) ].
-		arguments size > 1 ifTrue: [ self machineSimulator arg1RegisterValue: (arguments at: 2) ]].
+		arguments size > 1 ifTrue: [ self halt ]].
 	
 	self prepareCall
 ]
@@ -867,7 +856,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUpTrampolines [
 	cogit ordinarySendTrampolineAt: 3 "args" put: send3TrampolineAddress.
 
 
-	cogit cePICMissTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#cePICMissTrampoline).
+	cogit ceCPICMissTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCPICMissTrampoline).
 	cogit cePICAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#cePICAbortTrampoline).
 	cogit ceMethodAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceMethodAbortTrampoline).
 

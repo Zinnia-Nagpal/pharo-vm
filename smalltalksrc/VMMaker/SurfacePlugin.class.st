@@ -35,14 +35,6 @@ SurfacePlugin class >> requiresCrossPlatformFiles [
 	^true
 ]
 
-{ #category : 'primitives' }
-SurfacePlugin >> destroyManualSurface [
-	"Defined in C code"
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
 { #category : 'private - utils' }
 SurfacePlugin >> dispatchOf: aSurface [
 	<cmacro: '(aSurface) aSurface->dispatch'>
@@ -363,7 +355,7 @@ SurfacePlugin >> primitiveDestroyManualSurface [
 	interpreterProxy methodArgumentCount == 1 ifFalse: [^interpreterProxy primitiveFail].
 	surfaceID := interpreterProxy stackIntegerValue: 0.
 	interpreterProxy failed ifTrue: [^nil].
-	result := self cCall: 'destroyManualSurface' withArguments: {surfaceID}.
+	result := self destroyManualSurface: surfaceID.
 	result = 0 ifTrue: [^interpreterProxy primitiveFail].
 	^interpreterProxy pop: 1
 	

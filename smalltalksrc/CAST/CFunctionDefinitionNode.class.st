@@ -124,6 +124,18 @@ CFunctionDefinitionNode >> initialize [
 	arguments := OrderedCollection new: 2.
 ]
 
+{ #category : 'testing' }
+CFunctionDefinitionNode >> needsSeparator [
+
+	^ false
+]
+
+{ #category : 'testing' }
+CFunctionDefinitionNode >> needsTrailingSemicolon [
+
+	^ false
+]
+
 { #category : 'generated' }
 CFunctionDefinitionNode >> specifiers [
 	^ specifiers

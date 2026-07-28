@@ -121,16 +121,45 @@ CogMethodSurrogate >> at: anAddress objectMemory: objectMemory cogit: aCogit [
 ]
 
 { #category : 'accessing' }
-CogMethodSurrogate >> cmIsFullBlock [
-	"Answer the value of picHasMNUCaseOrCMIsFullBlock"
+CogMethodSurrogate >> cPICNumCases [
+	^self stackCheckOffset
+]
 
-	^ self picHasMNUCaseOrCMIsFullBlock
+{ #category : 'accessing' }
+CogMethodSurrogate >> cPICNumCases: n [
+	^self stackCheckOffset: n
+]
+
+{ #category : 'accessing' }
+CogMethodSurrogate >> cmIsFullBlock [
+	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
+
+	^SistaV1BytecodeSet
+		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock]
+		ifFalse: [false]
 ]
 
 { #category : 'testing' }
 CogMethodSurrogate >> containsAddress: anAddress [
 	^address <= anAddress asUnsignedInteger
 	  and: [address + self blockSize >= anAddress asUnsignedInteger]
+]
+
+{ #category : 'accessing' }
+CogMethodSurrogate >> cpicHasMNUCase [
+	"Answer if the receiver has an MNU case."
+	<inline: true>
+
+	^SistaV1BytecodeSet
+		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]]
+		ifFalse: [self cpicHasMNUCaseOrCMIsFullBlock]
+]
+
+{ #category : 'accessing' }
+CogMethodSurrogate >> cpicHasMNUCase: anObject [
+	"Set if the receiver has an MNU case."
+
+	^self cpicHasMNUCaseOrCMIsFullBlock: anObject
 ]
 
 { #category : 'testing' }
@@ -146,7 +175,7 @@ CogMethodSurrogate >> isZero [
 ]
 
 { #category : 'accessing' }
-CogMethodSurrogate >> nextMegamorphicIC [
+CogMethodSurrogate >> nextOpenPIC [
 	| moField |
 	moField := self methodObject.
 	^moField ~= 0 ifTrue:
@@ -154,7 +183,7 @@ CogMethodSurrogate >> nextMegamorphicIC [
 ]
 
 { #category : 'accessing' }
-CogMethodSurrogate >> nextMegamorphicIC: cogMethodSurrogateOrNil [
+CogMethodSurrogate >> nextOpenPIC: cogMethodSurrogateOrNil [
 	^self methodObject: (cogMethodSurrogateOrNil ifNil: [0] ifNotNil: [cogMethodSurrogateOrNil asUnsignedInteger])
 ]
 
@@ -170,31 +199,6 @@ CogMethodSurrogate >> objectHeader: aValue [
 	^baseHeaderSize = 8
 		ifTrue: [memory long64At: address put: aValue]
 		ifFalse: [memory longAt: address put: aValue]
-]
-
-{ #category : 'accessing' }
-CogMethodSurrogate >> picHasMNUCase [
-	"Answer if the receiver has an MNU case."
-	<inline: true>
-
-	^ self picHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]
-]
-
-{ #category : 'accessing' }
-CogMethodSurrogate >> picHasMNUCase: anObject [
-	"Set if the receiver has an MNU case."
-
-	^self picHasMNUCaseOrCMIsFullBlock: anObject
-]
-
-{ #category : 'accessing' }
-CogMethodSurrogate >> picNumCases [
-	^self stackCheckOffset
-]
-
-{ #category : 'accessing' }
-CogMethodSurrogate >> picNumCases: n [
-	^self stackCheckOffset: n
 ]
 
 { #category : 'printing' }

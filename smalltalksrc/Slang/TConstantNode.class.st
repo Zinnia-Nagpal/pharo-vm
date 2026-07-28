@@ -2,8 +2,7 @@ Class {
 	#name : 'TConstantNode',
 	#superclass : 'TParseNode',
 	#instVars : [
-		'value',
-		'shouldBeGenerated'
+		'value'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -38,11 +37,10 @@ TConstantNode >> asCASTIn: aBuilder [
 
 { #category : 'transformations' }
 TConstantNode >> asPrintfFormatStringNode [
-
-	^ TPrintfFormatStringNode new
-		  setValue: value;
-		  comment: comment;
-		  yourself
+	^TPrintfFormatStringNode new
+		setValue: value;
+		comment: comment;
+		yourself
 ]
 
 { #category : 'accessing' }
@@ -68,13 +66,6 @@ TConstantNode >> constantNumbericValueOrNil [
 TConstantNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."
 	^false
-]
-
-{ #category : 'initialization' }
-TConstantNode >> initialize [
-
-	super initialize.
-	shouldBeGenerated := true
 ]
 
 { #category : 'testing' }
@@ -116,27 +107,15 @@ TConstantNode >> nodesDo: aBlock parent: parent [
 
 { #category : 'printing' }
 TConstantNode >> printOn: aStream level: level [
-
 	value isSymbol
-		ifTrue: [ aStream nextPutAll: (value copyWithout: $:) ]
-		ifFalse: [ value storeOn: aStream ]
+		ifTrue: [aStream nextPutAll: (value copyWithout: $:)]
+		ifFalse: [value storeOn: aStream]
 ]
 
 { #category : 'accessing' }
 TConstantNode >> setValue: anObject [
 
 	value := anObject.
-]
-
-{ #category : 'accessing' }
-TConstantNode >> shouldBeGenerated [
-	^ shouldBeGenerated 
-]
-
-{ #category : 'accessing' }
-TConstantNode >> shouldBeGenerated: aBoolean [
-
-	shouldBeGenerated := aBoolean
 ]
 
 { #category : 'type inference' }

@@ -127,7 +127,7 @@ CCodeGeneratorGlobalStructure >> emitCVariablesOn: aStream [
 										[self preDeclareInterpreterProxyOn: target]
 									ifFalse: [target nextPutAll: 'static ']]
 							ifFalse:
-								[(self vmClass mustBeGlobalAndExport: varString) ifFalse:
+								[(self vmClass mustBeGlobal: varString) ifFalse:
 									[target nextPutAll: (inStruct ifTrue: ['_iss '] ifFalse: ['static '])]].
 						target nextPutAll: decl; nextPut: $;; cr]
 			]
@@ -315,6 +315,16 @@ CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
 	^true
 ]
 
+{ #category : 'utilities' }
+CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
+"TPR - remove all the global vars destined for the structure that are only used once - not worth the space,
+actually what will happen is the folding code will fold these variables into the method"
+
+	super localizeGlobalVariables.
+	globalVariableUsage := globalVariableUsage select: [:e | e size > 1].
+
+]
+
 { #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> placeInStructure: var [
 	"See if we should put this array into a structure.
@@ -328,7 +338,7 @@ CCodeGeneratorGlobalStructure >> placeInStructure: var [
 	(check includesSubstring: 'static') ifTrue: [^false].
 	(check includesSubstring: 'volatile') ifTrue: [^false].
 
-	^(self vmClass mustBeGlobalAndExport: var) not
+	^(self vmClass mustBeGlobal: var) not
 ]
 
 { #category : 'C code generator' }

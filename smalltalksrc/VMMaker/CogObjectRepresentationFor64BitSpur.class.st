@@ -62,6 +62,17 @@ CogObjectRepresentationFor64BitSpur >> allocateCounters: nCounters [
 		ifNotNil: [objOop + objectMemory baseHeaderSize]
 ]
 
+{ #category : 'in-line cacheing' }
+CogObjectRepresentationFor64BitSpur >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
+
+	"This supplies the bitmask for the isFullBlock bit, and the offset of the byte containing
+	 that bit in a CogMethod header to aBlock.  We don't have named variables holding this
+	 offset.  The following assert tests whether the values are correct by creating a surrogate
+	 on an empty ByteArray, setting the bit, and checking that the expected values are set
+	 in the ByteArray."
+	aBlock value: 16 value: objectMemory baseHeaderSize + 1 "zero-relative"
+]
+
 { #category : 'sista support' }
 CogObjectRepresentationFor64BitSpur >> branch2CasesIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	| classObj tag1 tag2 |
@@ -180,7 +191,7 @@ CogObjectRepresentationFor64BitSpur >> genAlloc64BitPositiveIntegerValue: valueR
 { #category : 'primitive generators' }
 CogObjectRepresentationFor64BitSpur >> genAlloc64BitSignedIntegerValue: valueReg into: resultReg scratchReg: scratch1 scratchReg: scratch2 [
 	<returnTypeC: #'AbstractInstruction *'>
-	| allocSize newLNIHeader jumpFail jumpNeg continue |
+	| allocSize newLNIHeader jumpFail jumpNeg |
 	allocSize := objectMemory baseHeaderSize + objectMemory wordSize.
 	newLNIHeader := objectMemory
 							headerForSlots: 1
@@ -194,22 +205,23 @@ CogObjectRepresentationFor64BitSpur >> genAlloc64BitSignedIntegerValue: valueReg
 	cogit MoveCq: newLNIHeader R: scratch1.
 	cogit CmpCq: 0 R: valueReg.
 	jumpNeg := cogit JumpLess: 0.
-	
 	"We can avoid duplicating the large constant and a jump choosing between
 	 the alternatives by incrementing the single constant if positive.  The assert
 	 checks that the hack works. Compact code is to be preferred because it is
 	 an uncommon case; usually the value will fit in a SmallInteger."
 	self assert: (objectMemory headerForSlots: 0 format: 0 classIndex: 1) = 1.
 	cogit AddCq: ClassLargePositiveIntegerCompactIndex - ClassLargeNegativeIntegerCompactIndex R: scratch1.
-	continue := cogit Jump: 0.
-	
-	"Now box the value into the object, this code below is for both positive and negative values"
-	jumpNeg jmpTarget: cogit Label.
-	cogit NegateR: valueReg.
-	
-	"Write the header, then the value"
-	continue jmpTarget: cogit Label.
-	cogit MoveR: scratch1 Mw: 0 r: resultReg.
+	jumpNeg jmpTarget:
+	(cogit MoveR: scratch1 Mw: 0 r: resultReg).
+	"The old less compact code was
+	cogit CmpCq: 0 R: valueReg.
+	jumpNeg := cogit JumpLess: 0.
+	cogit MoveCq: newLPIHeader R: scratch1.
+	jumpJoin := cogit Jump: 0.
+	jumpNeg jmpTarget:
+	(cogit MoveCq: newLNIHeader R: scratch1).
+	jumpJoin jmpTarget:
+	(cogit MoveR: scratch1 Mw: 0 r: resultReg)."
 	cogit MoveR: valueReg Mw: objectMemory baseHeaderSize r: resultReg.
 	^jumpFail
 ]
@@ -504,7 +516,7 @@ CogObjectRepresentationFor64BitSpur >> genGetHashFieldNonImmOf: instReg into: de
 ]
 
 { #category : 'compile abstract instructions' }
-CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg into: destReg [
+CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline
 	 cache tag for a given object is the value loaded in inline caches to distinguish
 	 objects of different classes.  In Spur this is either the tags for immediates, or
@@ -512,6 +524,8 @@ CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg 
 	| jumpImm entryLabel |
 	<var: #jumpImm type: #'AbstractInstruction *'>
 	<var: #entryLabel type: #'AbstractInstruction *'>
+	forEntry ifTrue:
+		[cogit AlignmentNops: objectMemory wordSize].
 	entryLabel := cogit Label.
 	cogit AndCq: objectMemory tagMask R: sourceReg R: destReg.
 	jumpImm := cogit JumpNonZero: 0.
@@ -519,8 +533,24 @@ CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg 
 	self flag: #endianness.
 	cogit MoveMw: 0 r: sourceReg R: destReg.
 	cogit AndCq: objectMemory classIndexMask R: destReg.
+
+	"The entry and the noCheckEntry (that will generated after) need to be aligned differently.
+	We do that by forcing some odd number of extra Nop operations here.
+	One Nop is not enough because that causes x86-64 entries to have the same allignment.
+	
+	In ARM64 all instructions are 4 byte long, thus 3 Nops make 
+	   - the entry to be aligned to 8 bytes and
+	   - the no check entry aligned to 4 bytes.
+	
+	In x86-64 instruction size is variable, and 3 Nops take 3 bytes."
+	forEntry ifTrue: [ 
+		cogit Nop.
+		cogit Nop.
+		cogit Nop.
+	].
+
 	jumpImm jmpTarget: cogit Label.
-	^ entryLabel
+	^entryLabel
 ]
 
 { #category : 'compile abstract instructions' }
@@ -1284,7 +1314,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 	signedVersion
 		ifTrue: "c.f. Spur64BitMemoryManager>>#isIntegerValue:"
 			[cogit ArithmeticShiftRightCq: self numSmallIntegerBits R: TempReg. "If in range this is now 0 or -1"
-			 cogit AddCq: 1 R: TempReg.
+			 cogit AndCq: 16rF R: TempReg.
 			 cogit CmpCq: 1 R: TempReg.
 			 jumpNotSmallInteger := cogit JumpAbove: 0.
 			 cogit MoveR: ClassReg R: ReceiverResultReg.
@@ -2253,15 +2283,35 @@ CogObjectRepresentationFor64BitSpur >> maybeGenerateSelectorIndexDereferenceRout
 	 special selectors array and index that.  Otherwise, index the current method.
 	 The routine uses Extra0Reg & Extra1Reg, which are available, since they
 	 are not live at point of send."
-	| jumpNegative |
+	| jumpNegative jumpNotBlock jumpFullBlock |
 	<var: 'jumpNegative' type: #'AbstractInstruction *'>
+	<var: 'jumpNotBlock' type: #'AbstractInstruction *'>
+	<var: 'jumpFullBlock' type: #'AbstractInstruction *'>
 	cogit zeroOpcodeIndex.
 	cogit CmpCq: 0 R: ClassReg.
 	jumpNegative := cogit JumpLess: 0.
 	cogit
 		MoveMw: FoxMethod r: FPReg R: Extra0Reg;
 		AddCq: 2 R: ClassReg; "Change selector index to 1-relative, skipping the method header"
-		AndCq: methodZone zoneAlignment negated R: Extra0Reg; "Now fetch the method object and index with the literal index to retrieve the selector"
+		TstCq: MFMethodFlagIsBlockFlag R: Extra0Reg.
+	jumpNotBlock := cogit JumpZero: 0.
+	"If in a block, need to find the home method...  If using full blocks, need to test the cpicHasMNUCaseOrCMIsFullBlock bit"
+	cogit AndCq: methodZone zoneAlignment negated R: Extra0Reg.
+	SistaV1BytecodeSet ifTrue:
+		[self bitAndByteOffsetOfIsFullBlockBitInto:
+			[:bitmask :byteOffset|
+			jumpFullBlock := cogit
+				MoveMb: byteOffset r: Extra0Reg R: Extra1Reg;
+				TstCq: bitmask R: Extra1Reg;
+				JumpNonZero: 0]].
+	cogit 
+		MoveM16: 0 r: Extra0Reg R: Extra1Reg;
+		SubR: Extra1Reg R: Extra0Reg.
+	jumpNotBlock jmpTarget: cogit Label.
+	SistaV1BytecodeSet ifTrue:
+		[jumpFullBlock jmpTarget: jumpNotBlock getJmpTarget].
+	cogit "Now fetch the method object and index with the literal index to retrieve the selector"
+		AndCq: methodZone zoneAlignment negated R: Extra0Reg;
 		MoveMw: (cogit offset: CogMethod of: #methodObject) r: Extra0Reg R: Extra1Reg;
 		MoveXwr: ClassReg R: Extra1Reg R: ClassReg;
 		RetN: 0.

@@ -61,7 +61,7 @@ FloatMathPlugin >> primitiveArcCosH [
 	<var: #result type: 'double'>
 	rcvr := interpreterProxy stackFloatValue: 0.
 	(interpreterProxy failed) ifTrue:[^nil].
-	result := self cCall: '__ieee754_acosh' withArguments: {rcvr}.
+	result := self cCode: '__ieee754_acosh(rcvr)' inSmalltalk: [rcvr arcCosH].
 	(self isnan: result) ifTrue:[^interpreterProxy primitiveFail].
 	interpreterProxy pop: interpreterProxy methodArgumentCount + 1.
 	interpreterProxy pushFloat: result.
@@ -91,7 +91,7 @@ FloatMathPlugin >> primitiveArcSinH [
 	<var: #result type: 'double'>
 	rcvr := interpreterProxy stackFloatValue: 0.
 	(interpreterProxy failed) ifTrue:[^nil].
-	result := self cCall: '__ieee754_asinh' withArguments: {rcvr}.
+	result := self cCode: '__ieee754_asinh(rcvr)' inSmalltalk: [rcvr arcSinH].
 	(self isnan: result) ifTrue:[^interpreterProxy primitiveFail].
 	interpreterProxy pop: interpreterProxy methodArgumentCount + 1.
 	interpreterProxy pushFloat: result.
@@ -138,7 +138,7 @@ FloatMathPlugin >> primitiveArcTanH [
 	<var: #result type: 'double'>
 	rcvr := interpreterProxy stackFloatValue: 0.
 	(interpreterProxy failed) ifTrue:[^nil].
-	result := self cCall: '__ieee754_atanh' withArguments: {rcvr}.
+	result := self cCode: '__ieee754_atanh(rcvr)' inSmalltalk: [rcvr arcTanH].
 	(self isnan: result) ifTrue:[^interpreterProxy primitiveFail].
 	interpreterProxy pop: interpreterProxy methodArgumentCount + 1.
 	interpreterProxy pushFloat: result.
@@ -168,7 +168,7 @@ FloatMathPlugin >> primitiveCosH [
 	<var: #result type: 'double'>
 	rcvr := interpreterProxy stackFloatValue: 0.
 	(interpreterProxy failed) ifTrue:[^nil].
-	result := self cCall: '__ieee754_cosh' withArguments: {rcvr}.
+	result := self cCode: '__ieee754_cosh(rcvr)' inSmalltalk: [rcvr cosH].
 	(self isnan: result) ifTrue:[^interpreterProxy primitiveFail].
 	interpreterProxy pop: interpreterProxy methodArgumentCount + 1.
 	interpreterProxy pushFloat: result.
@@ -225,21 +225,18 @@ FloatMathPlugin >> primitiveFractionalPart [
 { #category : 'float primitives' }
 FloatMathPlugin >> primitiveHypot [
 	"hypot(x,y) returns sqrt(x^2+y^2) with error less  than 1 ulps"
-
+	| rcvr arg result |
 	<export: true>
 	<var: #rcvr type: 'double'>
 	<var: #arg type: 'double'>
 	<var: #result type: 'double'>
-	| rcvr arg result |
 	arg := interpreterProxy stackFloatValue: 0.
 	rcvr := interpreterProxy stackFloatValue: 1.
-	interpreterProxy failed ifTrue: [ ^ nil ].
-	result := self cCall: '__ieee754_hypot' withArguments: {
-			          rcvr.
-			          arg }.
-	(self isnan: result) ifTrue: [ ^ interpreterProxy primitiveFail ].
+	(interpreterProxy failed) ifTrue:[^nil].
+	result := self cCode: '__ieee754_hypot(rcvr, arg)' inSmalltalk: [rcvr hypot: arg].
+	(self isnan: result) ifTrue:[^interpreterProxy primitiveFail].
 	interpreterProxy pop: interpreterProxy methodArgumentCount + 1.
-	interpreterProxy pushFloat: result
+	interpreterProxy pushFloat: result.
 ]
 
 { #category : 'float primitives' }
@@ -315,7 +312,7 @@ FloatMathPlugin >> primitiveSinH [
 	<var: #result type: 'double'>
 	rcvr := interpreterProxy stackFloatValue: 0.
 	(interpreterProxy failed) ifTrue:[^nil].
-	result := self cCall: '__ieee754_sinh' withArguments: {rcvr}.
+	result := self cCode: '__ieee754_sinh(rcvr)' inSmalltalk: [rcvr sinH].
 	(self isnan: result) ifTrue:[^interpreterProxy primitiveFail].
 	interpreterProxy pop: interpreterProxy methodArgumentCount + 1.
 	interpreterProxy pushFloat: result.
@@ -361,7 +358,7 @@ FloatMathPlugin >> primitiveTanH [
 	<var: #result type: 'double'>
 	rcvr := interpreterProxy stackFloatValue: 0.
 	(interpreterProxy failed) ifTrue:[^nil].
-	result := self cCall: '__ieee754_tanh' withArguments: {rcvr}.
+	result := self cCode: '__ieee754_tanh(rcvr)' inSmalltalk: [rcvr tanH].
 	(self isnan: result) ifTrue:[^interpreterProxy primitiveFail].
 	interpreterProxy pop: interpreterProxy methodArgumentCount + 1.
 	interpreterProxy pushFloat: result.

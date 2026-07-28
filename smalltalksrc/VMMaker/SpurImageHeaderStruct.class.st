@@ -39,7 +39,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 
 	<var: #dataSize type: #size_t>
 	<var: #desiredHeapSize type: #size_t>
-	<var: #headerStart type: #fileOffset_t>
+	<var: #headerStart type: #squeakFileOffsetType>
 
 	self filteredInstVarNames do:
 		[:ivn|
@@ -48,7 +48,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 			value: (ivn caseOf: {
 						['dataSize']				-> [#'size_t'].
 						['desiredHeapSize']	-> [#'size_t'].
-						['headerStart']			-> [#'fileOffset_t'].
+						['headerStart']			-> [#'squeakFileOffsetType'].
 				} otherwise: [ #'sqInt' ])]
 ]
 

@@ -64,6 +64,12 @@ UnicornI386Simulator >> createUnicorn [
 	^ Unicorn x86
 ]
 
+{ #category : 'disassembling' }
+UnicornI386Simulator >> disassembler [
+	
+	^ LLVMDisassembler i386
+]
+
 { #category : 'as yet unclassified' }
 UnicornI386Simulator >> doublePrecisionFloatingPointRegister0 [
 
@@ -207,12 +213,6 @@ UnicornI386Simulator >> getReturnAddress [
 UnicornI386Simulator >> hasLinkRegister [ 
 
 	^ false
-]
-
-{ #category : 'disassembling' }
-UnicornI386Simulator >> instantiateDisassembler [
-	
-	^ LLVMDisassembler i386
 ]
 
 { #category : 'registers' }

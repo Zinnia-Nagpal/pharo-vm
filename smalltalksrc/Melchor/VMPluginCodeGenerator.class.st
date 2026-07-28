@@ -144,7 +144,7 @@ VMPluginCodeGenerator >> emitCHeaderOn: aStream [
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "virtualMachine.h"	/*  The virtual machine proxy definition */
+#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -154,7 +154,7 @@ VMPluginCodeGenerator >> emitCHeaderOn: aStream [
 # undef EXPORT
 # define EXPORT(returnType) static returnType
 #endif'; newLine; newLine.
-	self addHeaderFile: '"memoryAccess.h"'.
+	self addHeaderFile: '"sqMemoryAccess.h"'.
 	"Additional header files; include squeak VM ones last"
 	self emitHeaderFiles: (headerFiles reject: [:hdr| hdr includes: $<]) on: aStream.
 	self maybePutPreambleFor: pluginClass on: aStream.
@@ -223,7 +223,7 @@ VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [
 	"Generate the C code for this message onto the given stream."
 
 	| arm result |
-	"Avoid nesting #if DEFINE...#else...#endif within arms of an outer #if DEFINE...#else...#endif."
+	"Avoid nesting #if SPURVM...#else...#endif within arms of an outer #if SPURVM...#else...#endif."
 	(Notification new
 		 tag: #inRemapOopInArm;
 		 signal) ifNotNil: [ :inRemapOopInArm | 
@@ -330,9 +330,14 @@ VMPluginCodeGenerator >> noteUsedPluginFunction: aSelector [
 VMPluginCodeGenerator >> pluginClass: aPluginClass [
 	"Set the plugin class and name when generating plugins.
 	 And for run-time use, answer the name string."
-
+	| packageId |
 	pluginClass := aPluginClass.
-	^ self declareModuleName: aPluginClass moduleNameAndVersion
+	packageId := self shortMonticelloDescriptionForClass: pluginClass.
+	(packageId beginsWith: pluginClass name) ifTrue:
+		[packageId := packageId allButFirst: pluginClass name size].
+	(packageId beginsWith: pluginClass moduleName) ifTrue:
+		[packageId := packageId allButFirst: pluginClass moduleName size].
+	^self declareModuleName: pluginClass moduleNameAndVersion, packageId
 ]
 
 { #category : 'public' }
@@ -413,6 +418,7 @@ VMPluginCodeGenerator >> preDeclareMacrosForFastClassCheckingOn: aStream [
 
 		'# define isIntegerObject(oop) ((oop) & 1)' newLine
 
+		'# if SPURVM'
 		'extern sqInt classIndexOf(sqInt);'
 	"Compact class indices are hardcoded here because there is no guarantee that the pool values at generation time
 	 are that of SPUR.. Make sure they are in sync with SpurMemoryManager class>>initializeCompactClassIndices"
@@ -427,6 +433,7 @@ VMPluginCodeGenerator >> preDeclareMacrosForFastClassCheckingOn: aStream [
 		'#	define isLargeIntegerObject(oop) (!isImmediate(oop) && (unsigned)(classIndexOf(oop) - LargeNegativeIntegerClassIndex) <= 1)'
 		'#	define isLargeNegativeIntegerObject(oop) (!isImmediate(oop) && classIndexOf(oop) == LargeNegativeIntegerClassIndex)'
 		'#	define isLargePositiveIntegerObject(oop) (!isImmediate(oop) && classIndexOf(oop) == LargePositiveIntegerClassIndex)'
+		'# endif /* SPURVM */'
 		'#endif /* defined(SQUEAK_BUILTIN_PLUGIN) */' newLine
 
 	"If the functionality has not been defined via macros, define default versions using existing plugin API"
@@ -497,9 +504,9 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 	(anIntegralCType beginsWith: 'register ') ifTrue:
 		[^self sizeOfIntegralCType: (anIntegralCType allButFirst: 9)].
 	prunedCType := (anIntegralCType beginsWith: 'unsigned ')
-						ifTrue: [(anIntegralCType allButFirst: 9) trimBoth]
+						ifTrue: [(anIntegralCType allButFirst: 9) withBlanksTrimmed]
 						ifFalse: [(anIntegralCType beginsWith: 'signed ')
-									ifTrue: [(anIntegralCType allButFirst: 7) trimBoth]
+									ifTrue: [(anIntegralCType allButFirst: 7) withBlanksTrimmed]
 									ifFalse: [anIntegralCType]].
 	
 	^prunedCType asString caseOf: {
@@ -514,7 +521,7 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		['short']			->	[2].
 		['short int']		->	[2].
 		['char']			->	[1].
-		['long']			->	[ self bytesPerWord ]. "It's ambiguous on LLP64 and we'll later remove it"
+		['long']			->	[BytesPerWord]. "It's ambiguous on LLP64 and we'll later remove it"
 		['size_t']		->	[6].
 		['pid_t']			->	[6].
 	}
@@ -522,7 +529,7 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		[((anIntegralCType beginsWith: 'unsigned') "e.g. 'unsigned  : 8'"
 		  and: [(anIntegralCType includesAnyOf: '[*]') not
 		  and: [(index := anIntegralCType indexOf: $:) > 0]])
-			ifTrue: [(Integer readFrom: (anIntegralCType copyFrom: index + 1 to: anIntegralCType size) trimBoth readStream) + 7 // 8]
+			ifTrue: [(Integer readFrom: (anIntegralCType copyFrom: index + 1 to: anIntegralCType size) withBlanksTrimmed readStream) + 7 // 8]
 			ifFalse: [self error: 'unrecognized integral type']]
 ]
 
@@ -538,7 +545,7 @@ VMPluginCodeGenerator >> structTargetKindForDeclaration: decl [ "<String>"
 		[pluginClass ifNotNil:
 			[(pluginClass isStructType: (decl last = $*
 											ifTrue: [decl allButLast]
-											ifFalse: [decl]) trimBoth) ifTrue:
+											ifFalse: [decl]) withBlanksTrimmed) ifTrue:
 				[(decl indexOf: $*) > 0
 					ifTrue: [#pointer]
 					ifFalse: [#struct]]]]

@@ -325,7 +325,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateMonomorphicCallsite [
 ]
 
 { #category : 'tests' }
-VMCodeCompactionTest >> testCompactingShouldRelocatePICCallsite [
+VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
 	Code compaction is launched so both A, B, C and the PIC are moved and remapped.
@@ -414,21 +414,21 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePICCallsite [
 	
 	self
 		runFrom: (interpreter cogMethodOf: callerMethodOop) address + cogit noCheckEntryOffset
-		until: cogit cePICMissTrampoline.
+		until: cogit ceCPICMissTrampoline.
 
 	self
 		assert: machineSimulator instructionPointerRegisterValue
-		equals: cogit cePICMissTrampoline
+		equals: cogit ceCPICMissTrampoline
 ]
 
 { #category : 'tests' }
-VMCodeCompactionTest >> testCompactingShouldRelocatePICInterpreterAbortCallsite [
+VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbortCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
 	Code compaction is launched so both A, B, C and the PIC are moved and remapped.
 	Re-sending a message should still work and arrive to all cases of the PIC after remap."
 
-	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop calleeMethodOop2 pic |
+	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop calleeCogMethod2 calleeMethodOop2 pic |
 	"Create a method that will be collected and force compaction of all the next ones"
 	firstMethod := self
 		               jitMethod: (self findMethod: #methodToCompile1)
@@ -512,7 +512,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePICInterpreterAbortCallsite 
 ]
 
 { #category : 'tests' }
-VMCodeCompactionTest >> testCompactingShouldRelocatePICMNUAbortCallsite [
+VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICMNUAbortCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
 	Code compaction is launched so both A, B, C and the PIC are moved and remapped.

@@ -27,9 +27,6 @@ Class vars:
 
 History
 --------
-v2.1
-
-- fix: >>digitDivLarge:with:negative: now checks out of memory
 
 v2.0
 
@@ -114,7 +111,7 @@ LargeIntegersPlugin class >> moduleNameAndVersion [
 LargeIntegersPlugin class >> version [
 	"Answer the receiver's version info as String."
 
-	^ 'v2.1'
+	^ 'v2.0'
 ]
 
 { #category : 'util' }
@@ -923,7 +920,6 @@ LargeIntegersPlugin >> digitDivLarge: firstInteger with: secondInteger negative:
 			 rem ifNil: [^rem]].
 	self remapOop: #(div rem)
 		in: [quo := self createLargeIntegerNeg: neg digitLength: quoDigitLen].
-	quo ifNil: [^interpreterProxy primitiveFailFor: PrimErrNoMemory].
 	self
 		cDigitDiv: (self pointerToFirstDigitOfLargeInt: div)
 		len: (self digitSizeOfLargeInt: div)

@@ -1,8 +1,7 @@
 Trait {
 	#name : 'TVMSimulator',
-	#category : 'VMMaker-Simulation',
-	#package : 'VMMaker',
-	#tag : 'Simulation'
+	#category : 'VMMaker',
+	#package : 'VMMaker'
 }
 
 { #category : 'initialization' }

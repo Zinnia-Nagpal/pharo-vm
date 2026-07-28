@@ -5,9 +5,7 @@ Class {
 		'simulator',
 		'registerAliases',
 		'registerSmalltalkAliases',
-		'memory',
-		'disassembler',
-		'tmpBuf'
+		'memory'
 	],
 	#category : 'VMMakerTests-Unicorn',
 	#package : 'VMMakerTests',
@@ -272,7 +270,7 @@ ProcessorSimulator >> disassembleFrom: start to: stop [
 
 { #category : 'disassembling' }
 ProcessorSimulator >> disassembler [
-	^ disassembler ifNil: [ disassembler := self instantiateDisassembler ].
+	self subclassResponsibility
 ]
 
 { #category : 'accessing-registers-abstract' }
@@ -411,11 +409,6 @@ ProcessorSimulator >> initializeRegisterAliases [
 ProcessorSimulator >> initializeRegisterSmalltalkAliases [
 
 	"Hook for subclasses"
-]
-
-{ #category : 'disassembling' }
-ProcessorSimulator >> instantiateDisassembler [
-	self subclassResponsibility
 ]
 
 { #category : 'accessing-registers-abstract' }
@@ -623,7 +616,7 @@ ProcessorSimulator >> pushWord: anInteger [
 ProcessorSimulator >> readFloat64Register: aRegisterID [
 
 	| registerValue |
-	registerValue := self tmpBufOfAtLeast: 32.
+	registerValue := ByteArray new: 8.
 	simulator register: aRegisterID value readInto: registerValue.
 
 	^ registerValue doubleAt: 1
@@ -633,8 +626,8 @@ ProcessorSimulator >> readFloat64Register: aRegisterID [
 ProcessorSimulator >> readRawRegister: aRegisterID size: aSize [
 
 	| registerValue |
-	registerValue := self tmpBufOfAtLeast: aSize.
-	simulator register: aRegisterID value readInto: tmpBuf.
+	registerValue := ByteArray new: aSize.
+	simulator register: aRegisterID value readInto: registerValue.
 	^ registerValue
 ]
 
@@ -853,14 +846,6 @@ ProcessorSimulator >> temporaryRegisterValue: anInteger [
 	^ self writeRegister: self temporaryRegister value: anInteger
 ]
 
-{ #category : 'simulation-support' }
-ProcessorSimulator >> tmpBufOfAtLeast: aSize [
-
-	(tmpBuf isNil or: [ tmpBuf size < aSize ])
-		ifTrue: [ tmpBuf := ByteArray newPinned: aSize ].
-	^ tmpBuf.
-]
-
 { #category : 'accessing' }
 ProcessorSimulator >> wordAt: anInteger [
 
@@ -876,7 +861,7 @@ ProcessorSimulator >> wordSize [
 ProcessorSimulator >> writeFloat64Register: aRegister value: aDouble [
 
 	| value |
-	value := self tmpBufOfAtLeast: 32.
+	value := ByteArray new: 8.
 	value integerAt: 1 put: aDouble size: 8 signed: false.
 	simulator register: aRegister value write: value.
 
@@ -886,7 +871,7 @@ ProcessorSimulator >> writeFloat64Register: aRegister value: aDouble [
 ProcessorSimulator >> writeRegister: aRegister value: anInteger [
 
 	| value |
-	value := self tmpBufOfAtLeast: self wordSize.
+	value := ByteArray new: self wordSize.
 	value integerAt: 1 put: anInteger size: self wordSize signed: false.
 	simulator register: aRegister value write: value.
 

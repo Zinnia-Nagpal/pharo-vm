@@ -38,15 +38,16 @@ TLabeledCommentNode >> accept: aVisitor [
 { #category : 'tranforming' }
 TLabeledCommentNode >> asCASTIn: aBuilder [
 
-	| statements |
-	statements := OrderedCollection new.
+	| result |
+	result := CCompoundStatementNode new.
+	result needsBrackets: false.
 
 	label ifNotNil: [
 		| labelledNode |
 		labelledNode := CLabeledStatementNode new.
 		labelledNode label: (CIdentifierNode name: label).
 		labelledNode statement: CEmptyStatementNode new.
-		statements add: labelledNode ].
+		result add: labelledNode ].
 
 
 	comment ifNotNil: [
@@ -56,22 +57,16 @@ TLabeledCommentNode >> asCASTIn: aBuilder [
 				 s space.
 				 s nextPutAll: self comment.
 				 s space ]).
-		statements add: commentNode.
+		result add: commentNode.
 		aBuilder previousCommenter: self ].
 
 	(asmLabel notNil and: [
 		 aBuilder currentMethod selector == #interpret ]) ifTrue: [
 		| asmLabelNode |
 		asmLabelNode := aBuilder asmLabelNodeFor: asmLabel.
-		statements add: asmLabelNode ]. "only output labels in the interpret function."
+		result add: asmLabelNode ]. "only output labels in the interpret function."
 
-	statements size = 1
-		ifTrue: [ ^ statements first ].
-
-	^ CCompoundStatementNode new
-		statements: statements;
-		needsBrackets: false;
-		yourself.
+	^ result
 ]
 
 { #category : 'accessing' }

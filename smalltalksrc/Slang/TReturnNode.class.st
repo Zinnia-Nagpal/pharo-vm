@@ -68,16 +68,6 @@ TReturnNode >> asReturnNode [
 ]
 
 { #category : 'transformations' }
-TReturnNode >> assignLastExpressionTo: aTVariableNode [
-	
-	" ^ exp => ^ var := exp "
-
-	^ TReturnNode new expression: (TAssignmentNode new
-			   setVariable: aTVariableNode
-			   expression: expression)
-]
-
-{ #category : 'transformations' }
 TReturnNode >> bindVariableUsesIn: aDictionary [
 
 	self expression: (expression bindVariableUsesIn: aDictionary)
@@ -117,8 +107,11 @@ TReturnNode >> children [
 
 { #category : 'transformations' }
 TReturnNode >> copyWithoutReturn [
+	"called when inlining happens, if the expression is in a cast, it may be no longer needed and will produce a warning by the C compiler if the expression isn't use as an expression anymore"
 
-	expression parent: parent.
+	(self isNotExpression and: [
+		 expression isSend and: [ expression selector beginsWith: #cCoerce ] ])
+		ifTrue: [ ^ expression arguments first ].
 	^ expression
 ]
 
@@ -212,17 +205,6 @@ TReturnNode >> removeAssertions [
 ]
 
 { #category : 'transformations' }
-TReturnNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
-
-	self expression: (expression
-			 renameLocalVariablesGivenClassVariables: classVariables
-			 globalVariables: globalsVariables
-			 classNames: classNames
-			 inCodeGenerator: aCodeGen
-			 collectingChangesIn: changedVariables)
-]
-
-{ #category : 'transformations' }
 TReturnNode >> replaceChild: aNode with: aReplacementNode [
 
 	expression == aNode ifFalse: [ self error: 'Node is not a child of current node' ].
@@ -232,12 +214,9 @@ TReturnNode >> replaceChild: aNode with: aReplacementNode [
 { #category : 'transformations' }
 TReturnNode >> replaceNodesIn: aDictionary [
 
-	| aDictionaryAtSelf |
-	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
-	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
-
-	self expression: (expression replaceNodesIn: aDictionary).
-	^ self
+	^aDictionary at: self ifAbsent: [
+		self expression: (expression replaceNodesIn: aDictionary).
+		self]
 ]
 
 { #category : 'accessing' }

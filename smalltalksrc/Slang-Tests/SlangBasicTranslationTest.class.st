@@ -40,17 +40,6 @@ SlangBasicTranslationTest >> defineAtCompileTime: aString [
 	^ #(#OPTION1 #OPTION3 #OPTION) includes: aString
 ]
 
-{ #category : 'helpers' }
-SlangBasicTranslationTest >> functionIdentifier: aMethodTranslation [
-	| prototype matchIdentifier |
-	
-	prototype := aMethodTranslation lineNumber: 3.
-	
-	matchIdentifier := '([a-zA-Z0-9_])+\(' asRegex.
-	
-	^((matchIdentifier matchesIn: prototype) first) copyWithout: $(
-]
-
 { #category : 'accessing' }
 SlangBasicTranslationTest >> generator [
 
@@ -65,12 +54,11 @@ SlangBasicTranslationTest >> generator: anObject [
 
 { #category : 'helpers' }
 SlangBasicTranslationTest >> getTMethodFrom: selector [
+
 	"Generate a TMethod from a SlangBasicTranslationTestClass method."
 
 	generator addClass: SlangBasicTranslationTestClass.
-	generator
-		inferTypes;
-		prepareMethods.
+	generator inferTypes.
 	^ generator methodNamed: selector
 ]
 
@@ -105,16 +93,6 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	
 	"Compatibility method to make the test look like a VM translatable class"
 	^ true
-]
-
-{ #category : 'tests-method' }
-SlangBasicTranslationTest >> testApiMethodsWithConflictingName [
-	
-	generator addClass: SlangConflictingApiTestClass.
-	
-	self should: [generator renameConflictingMethods] raise: TranslationError.
-	
-	
 ]
 
 { #category : 'tests-blocks' }
@@ -941,8 +919,7 @@ SlangBasicTranslationTest >> testCaseStatementIsTranslatedAsSwitch [
 		someBytecode();
 	}
 	break;
-}
-'
+}'
 ]
 
 { #category : 'tests-case' }
@@ -966,8 +943,7 @@ SlangBasicTranslationTest >> testCaseStatementWithDifferentBodyAreDifferentCases
 		someBytecode2();
 	}
 	break;
-}
-'
+}'
 ]
 
 { #category : 'tests-case' }
@@ -987,8 +963,7 @@ SlangBasicTranslationTest >> testCaseStatementWithSameBodyAreSameCase [
 		someBytecode();
 	}
 	break;
-}
-'
+}'
 ]
 
 { #category : 'tests-constants' }
@@ -1184,28 +1159,6 @@ SlangBasicTranslationTest >> testConstantsStatementsInBlockValueAreIgnored [
 }'
 ]
 
-{ #category : 'tests-inlinemethod' }
-SlangBasicTranslationTest >> testDoNotInlineArgumentsOfCCall [
-	
-	| translation tMethod |
-	tMethod := self getTMethodFrom: #methodCallingCFunction.
-	tMethod recordDeclarationsIn: generator.
-	generator doBasicInlining: true.
-	
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-	
-	self
-		assert: translation
-		equals: '/* SlangBasicTranslationTestClass>>#methodCallingCFunction */
-static sqInt
-methodCallingCFunction(void)
-{
-	function(methodWithInlinePragma());
-	return 0;
-}'
-]
-
 { #category : 'tests-goto' }
 SlangBasicTranslationTest >> testGoto [
 
@@ -1213,98 +1166,7 @@ SlangBasicTranslationTest >> testGoto [
 	
 	translation := self translate: (TGoToNode label: 'lab').
 
-	self assert: translation equals: 'goto lab;
-'
-]
-
-{ #category : 'tests-inlinemethod' }
-SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
-
-	| translation codeGenerator inlinedMethod cast printedString |
-	translation := (self getTMethodFrom: #methodToBeTranslatedWithIfAndShiftRight).
-	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodWithIfAndShiftRight:) asTranslationMethodOfClass: TMethod).
-	
-	codeGenerator := CCodeGeneratorGlobalStructure new.
-	codeGenerator 
-		addMethod: translation;
-		addMethod: inlinedMethod;
-		doInlining: true.
-	
-	cast := translation asCASTIn: codeGenerator.
-	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
-	self assert: cast isCompoundStatement.
-	self assert: printedString equals: '/* SlangBasicTranslationTestClass>>#methodToBeTranslatedWithIfAndShiftRight */
-static sqInt
-methodToBeTranslatedWithIfAndShiftRight(void)
-{
-	/* begin methodWithIfAndShiftRight: */
-	((usqInt) (((2 < 0)
-		 ? 0
-		 : 2)) ) >> ((2 - 1) * 32);
-	/* end methodWithIfAndShiftRight: */
-	return 0;
-}
-'.
-]
-
-{ #category : 'tests-inline-builtins' }
-SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotations [
-
-	| tMethod translation |
-	tMethod := self getTMethodFrom:
-		           #methodUseParametersWithAnnotations:to:with:.
-	" Adding a method already does prepare methods "
-	generator doBasicInlining: true.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-	self
-		assert: translation
-		equals:
-			'/* SlangBasicTranslationTestClass>>#methodUseParametersWithAnnotations:to:with: */
-static sqInt
-methodUseParametersWithAnnotationstowith(unsigned int *_pFrom, unsigned int *_pTo, sqInt _anInteger)
-{
-	sqInt _i;
-	unsigned int *_pTo2;
-
-	/* begin methodFromWithAnnotations:to:len: */
-	_pTo2 = ((unsigned int *) (yourself(_pTo)) );
-	for (_i = 0; _i < 5; _i += 1) {
-		_pTo2[_i] = (_pFrom + _anInteger)[_i];
-	}
-	return 0;
-	/* end methodFromWithAnnotations:to:len: */
-}'
-]
-
-{ #category : 'tests-inline-builtins' }
-SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotationsUseBuiltIn [
-	| tMethod translation inlinedMethod |
-
-	tMethod := self getTMethodFrom: #methodUseParametersWithAnnotationsBuiltIn:to:with:.
-	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodFromWithAnnotations:to:) asTranslationMethodOfClass: TMethod).
-	" Adding a method already does prepare methods "
-	generator doBasicInlining: true.
-	
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self 
-		assert: translation
-		equals: '/* SlangBasicTranslationTestClass>>#methodUseParametersWithAnnotationsBuiltIn:to:with: */
-static sqInt
-methodUseParametersWithAnnotationsBuiltIntowith(unsigned int *_pFrom, unsigned int *_pTo, sqInt _anInteger)
-{
-	sqInt _i;
-
-	/* begin methodFromWithAnnotations:to: */
-	for (_i = 0; _i <= 10; _i += 1) {
-		_pTo[_i] = (_pFrom + _anInteger)[_i];
-	}
-	/* end methodFromWithAnnotations:to: */
-	return 0;
-}'
+	self assert: translation equals: 'goto lab'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1318,13 +1180,12 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenArr
 		equals: '{
 	VM_LABEL(methodUsingSingleArrayVariable);
 	{
-		int * _bar;
-		int[17] _foo;
+		int * bar;
+		int[17] foo;
 
-		_bar = _foo;
+		bar = foo;
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1338,13 +1199,12 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenExt
 		equals: '{
 	VM_LABEL(methodUsingSingleExternalVariable);
 	{
-		sqInt _bar;
-		external int _foo;
+		sqInt bar;
+		external int foo;
 
-		_bar = _foo;
+		bar = foo;
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1358,14 +1218,13 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenIni
 		equals: '{
 	VM_LABEL(methodUsingSingleNonInitializedVariable);
 	{
-		sqInt _bar;
-		sqInt _foo;
+		sqInt bar;
+		sqInt foo;
 
-		_foo = 0;
-		_bar = _foo;
+		foo = 0;
+		bar = foo;
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1379,13 +1238,12 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenSta
 		equals: '{
 	VM_LABEL(methodUsingSingleStaticVariable);
 	{
-		int _bar;
-		static int _foo;
+		int bar;
+		static int foo;
 
-		_bar = _foo;
+		bar = foo;
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1401,9 +1259,9 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveExternalTemp [
 	{
 		extern int foo;
 
+
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1419,9 +1277,9 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveStaticTemp [
 	{
 		static int foo;
 
+
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1438,8 +1296,7 @@ SlangBasicTranslationTest >> testInlineNodeRemovesUnusedTemps [
 	VM_LABEL(methodDefiningSingleVariable);
 	{
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1453,20 +1310,19 @@ SlangBasicTranslationTest >> testInlineNodeSortsLocalTemps [
 		equals: '{
 	VM_LABEL(methodWithUnsortedTemps);
 	{
-		sqInt _aaa;
-		sqInt _bar;
-		sqInt _ddd;
-		sqInt _foo;
-		sqInt _zzz;
+		sqInt aaa;
+		sqInt bar;
+		sqInt ddd;
+		sqInt foo;
+		sqInt zzz;
 
-		_aaa = 0;
-		_foo = 0;
-		_zzz = 0;
-		_bar = _aaa;
-		_ddd = _zzz + _foo;
+		aaa = 0;
+		foo = 0;
+		zzz = 0;
+		bar = aaa;
+		ddd = zzz + foo;
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1483,8 +1339,7 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedCase [
 	VM_LABEL(methodWithSharedCase);
 	{
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinenode' }
@@ -1501,8 +1356,7 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedLabelInCase [
 	VM_LABEL(methodWithSharedLabelInCase);
 	{
 	}
-}
-'
+}'
 ]
 
 { #category : 'tests-inlinemethod' }
@@ -1551,9 +1405,9 @@ SlangBasicTranslationTest >> testInlineWithCoerceAsExpressionInAssignment [
 static sqInt
 methodCallingInAssignemtMethodWithCCoerceInReturn(void)
 {
-	sqInt _i;
+	sqInt i;
 
-	_i = ((sqInt) (method()) );
+	i = ((sqInt) (method()) );
 	return 0;
 }'
 ]
@@ -1602,7 +1456,7 @@ SlangBasicTranslationTest >> testInlineWithUnecessaryCoerce [
 static sqInt
 methodCallingMethodWithCCoerceInReturn(void)
 {
-	((sqInt) (method()) );
+	method();
 	return 0;
 }'
 ]
@@ -1615,7 +1469,6 @@ SlangBasicTranslationTest >> testInlinedCommentInExpressionMoveReturn [
 	tMethod := self getTMethodFrom: #switchInReturn.
 	tMethod prepareMethodIn: generator.
 	tMethod recordDeclarationsIn: generator.
-
 	generator doBasicInlining: true.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -1663,9 +1516,9 @@ SlangBasicTranslationTest >> testInlinedMethodCommentInExpression [
 static sqInt
 methodCallingMethodExpressionList(void)
 {
-	sqInt _i;
+	sqInt i;
 
-	_i == ((/* begin emptyMethod */ /* end emptyMethod */ bodyOfMethodWithoutInlinePragma(), /* begin methodWithoutInlinePragmaAndEmptyMethodCall */ /* begin emptyMethod */ /* end emptyMethod */ bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragmaAndEmptyMethodCall */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
+	i == ((/* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma(), /* begin methodWithoutInlinePragmaAndEmptyMethodCall */ /* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragmaAndEmptyMethodCall */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
 	return 0;
 }'
 ]
@@ -1678,7 +1531,7 @@ SlangBasicTranslationTest >> testLabel [
 	translation := self translate: label.
 
 	self assert: translation equals: 'aLabel:
-'
+;'
 ]
 
 { #category : 'tests-labels' }
@@ -1702,7 +1555,7 @@ SlangBasicTranslationTest >> testLabelWithASMLabelWithinInterpret [
 	label := TLabeledCommentNode new asmLabel: 'vm_label'.
 	translation := self translate: label.
 
-	self assert: translation equals: 'VM_LABEL(vm_label)'
+	self assert: translation equals: 'VM_LABEL(vm_label);'
 ]
 
 { #category : 'tests-labels' }
@@ -1778,6 +1631,7 @@ methodWithAnOptionPragma(void)
 {
 	return 0;
 }
+
 #endif /* OPTION */'
 ]
 
@@ -1798,6 +1652,7 @@ methodWithOptionPragma(void)
 {
 	return 0;
 }
+
 #endif /* OPTION1 && OPTION3 */'
 ]
 
@@ -1835,6 +1690,7 @@ SlangBasicTranslationTest >> testMethodLocals [
 	"Test method local variables printing."
 	| translation tMethod |
 	tMethod := self getTMethodFrom: #methodWithLocalVariables.
+	tMethod recordDeclarationsIn: generator.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 	
@@ -1844,14 +1700,14 @@ SlangBasicTranslationTest >> testMethodLocals [
 static float
 methodWithLocalVariables(void)
 {
-	int _a;
-	int _b;
-	float _foo;
+	int a;
+	int b;
+	float foo;
 
-	_foo = 1.2;
-	_a = 1;
-	_b = 1;
-	return (_a + _b) + _foo;
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
 }'
 ]
 
@@ -1862,6 +1718,7 @@ SlangBasicTranslationTest >> testMethodLocalsWithGlobalStruct [
 	| translation tMethod |
 	tMethod := self getTMethodFrom: #methodWithLocalVariables.
 	tMethod referencesGlobalStruct.
+	tMethod recordDeclarationsIn: generator.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 	
@@ -1872,14 +1729,14 @@ static float
 methodWithLocalVariables(void)
 {
 	DECL_MAYBE_SQ_GLOBAL_STRUCT;
-	int _a;
-	int _b;
-	float _foo;
+	int a;
+	int b;
+	float foo;
 
-	_foo = 1.2;
-	_a = 1;
-	_b = 1;
-	return (_a + _b) + _foo;
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
 }'
 ]
 
@@ -1890,6 +1747,7 @@ SlangBasicTranslationTest >> testMethodLocalsWithGlobalStructAndVolatile [
 	| translation tMethod |
 	tMethod := self getTMethodFrom: #methodWithLocalVariables.
 	tMethod referencesGlobalStruct.
+	tMethod recordDeclarationsIn: generator.
 	tMethod properties: { #volatile -> true } asDictionary.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -1901,14 +1759,14 @@ static float
 methodWithLocalVariables(void)
 {
 	DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT;
-	volatile int _a;
-	volatile int _b;
-	volatile float _foo;
+	volatile int a;
+	volatile int b;
+	volatile float foo;
 
-	_foo = 1.2;
-	_a = 1;
-	_b = 1;
-	return (_a + _b) + _foo;
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
 }'
 ]
 
@@ -1918,6 +1776,7 @@ SlangBasicTranslationTest >> testMethodLocalsWithVolatile [
 	"Test method local variables printing."
 	| translation tMethod |
 	tMethod := self getTMethodFrom: #methodWithLocalVariables.
+	tMethod recordDeclarationsIn: generator.
 	tMethod properties: { #volatile -> true } asDictionary.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -1928,14 +1787,14 @@ SlangBasicTranslationTest >> testMethodLocalsWithVolatile [
 static float
 methodWithLocalVariables(void)
 {
-	volatile int _a;
-	volatile int _b;
-	volatile float _foo;
+	volatile int a;
+	volatile int b;
+	volatile float foo;
 
-	_foo = 1.2;
-	_a = 1;
-	_b = 1;
-	return (_a + _b) + _foo;
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
 }'
 ]
 
@@ -1967,7 +1826,7 @@ SlangBasicTranslationTest >> testMethodPrototypeWithExport [
 		assert: (translation lineNumber: 2) , self newLine
 			, (translation lineNumber: 3)
 		equals: 'EXPORT(sqInt)
-increment(sqInt _x)'
+increment(sqInt x)'
 ]
 
 { #category : 'tests-method' }
@@ -1995,21 +1854,7 @@ SlangBasicTranslationTest >> testMethodPrototypeWithStatic [
 		assert: (translation lineNumber: 2) , self newLine
 			, (translation lineNumber: 3)
 		equals: 'static sqInt
-increment(sqInt _x)'
-]
-
-{ #category : 'tests-method' }
-SlangBasicTranslationTest >> testMethodRenamesReservedSelectorName [
-
-	| method translation |
-	method := self getTMethodFrom: #continue.
-
-	generator renameKeywordsConflicts.
-
-	translation := self translate: method.
-	
-	self should: (translation includesSubstring: 'static sqInt
-continue_1(void)')
+increment(sqInt x)'
 ]
 
 { #category : 'tests-method' }
@@ -2056,15 +1901,16 @@ SlangBasicTranslationTest >> testMethodVolatileLocals [
 
 	| translation tMethod |
 	tMethod := self getTMethodFrom: #methodWithVolatileLocalVariables.
+	tMethod recordDeclarationsIn: generator.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 	self
 		assert: (translation lineNumber: 5) , self newLine
 			, (translation lineNumber: 6) , self newLine
 			, (translation lineNumber: 7)
-		equals: '	volatile int _a;
-	volatile int _b;
-	volatile float _foo;'
+		equals: '	volatile int a;
+	volatile int b;
+	volatile float foo;'
 ]
 
 { #category : 'tests-method' }
@@ -2098,23 +1944,6 @@ methodWithoutReturn(void)
 }'
 ]
 
-{ #category : 'tests-method' }
-SlangBasicTranslationTest >> testMethodsWithConflictingName [
-
-	| translation1 translation2 tMethod1 tMethod2 |
-	tMethod1 := self getTMethodFrom: #methodWithRepeatedCFunctionName.
-	tMethod2 := generator methods at: #methodWithRepeatedCFunctionName:.
-
-	generator renameConflictingMethods.
-
-	translation1 := self translate: tMethod1.
-	translation2 := self translate: tMethod2.
-
-	self
-		deny: (self functionIdentifier: translation1)
-		equals: (self functionIdentifier: translation2)
-]
-
 { #category : 'tests-case' }
 SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollapsedInSameCase [
 
@@ -2137,8 +1966,7 @@ SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollap
 		someBytecode2();
 	}
 	break;
-}
-'
+}'
 ]
 
 { #category : 'tests-blocks' }
@@ -2193,8 +2021,7 @@ SlangBasicTranslationTest >> testReturnCaseStatementDoesNotReplaceGotoByReturn [
 	default:
 	error("Case not found");
 	return -1;
-}
-'
+}'
 ]
 
 { #category : 'tests-case' }
@@ -2215,8 +2042,7 @@ SlangBasicTranslationTest >> testReturnCaseStatementMovesReturnIntoSwitch [
 	default:
 	error("Case not found");
 	return -1;
-}
-'
+}'
 ]
 
 { #category : 'tests-return' }
@@ -2236,8 +2062,7 @@ SlangBasicTranslationTest >> testReturnIfTrue [
 		
 	self assert: translation equals: 'return ((aBoolean)
 	 ? 1
-	 : 2);
-'
+	 : 2)'
 ]
 
 { #category : 'tests-return' }
@@ -2251,8 +2076,7 @@ SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 		setExpression: (TVariableNode new setName: 'var');
 		yourself).
 		
-	self assert: translation equals: 'return;
-'
+	self assert: translation equals: 'return;'
 ]
 
 { #category : 'tests-return' }
@@ -2269,8 +2093,7 @@ SlangBasicTranslationTest >> testReturnNonLeafExpressionInVoidMethod [
 		yourself).
 		
 	self assert: translation equals: 'var = 7;
-return;
-'
+return;'
 ]
 
 { #category : 'tests-switch' }
@@ -2348,8 +2171,7 @@ SlangBasicTranslationTest >> testReturnVariable [
 		setExpression: (TVariableNode new setName: 'var');
 		yourself).
 		
-	self assert: translation equals: 'return var;
-'
+	self assert: translation equals: 'return var'
 ]
 
 { #category : 'tests-builtins' }
@@ -2819,38 +2641,6 @@ SlangBasicTranslationTest >> testSendBytesPerWord [
 ]
 
 { #category : 'tests-builtins' }
-SlangBasicTranslationTest >> testSendCCall [
-
-	| translation send |
-	send := TAssignmentNode new
-		        setVariable: (TVariableNode named: 'y')
-		        expression: (TSendNode new
-				         setSelector: #cCall:
-				         receiver: (TVariableNode new setName: 'self')
-				         arguments: { (TConstantNode value: #foo) }).
-	translation := self translate: send.
-
-	self assert: translation equals: 'y = foo()'
-]
-
-{ #category : 'tests-builtins' }
-SlangBasicTranslationTest >> testSendCCallWithArguments [
-
-	| translation send |
-	send := TAssignmentNode new
-		        setVariable: (TVariableNode named: 'y')
-		        expression: (TSendNode new
-				         setSelector: #cCall:withArguments:
-				         receiver: (TVariableNode new setName: 'self')
-				         arguments: { 
-								(TConstantNode value: #foo).
-								(TStatementListNode statements: { (TConstantNode value: 2). (TConstantNode value: 3) }) }).
-	translation := self translate: send.
-
-	self assert: translation equals: 'y = foo(2, 3)'
-]
-
-{ #category : 'tests-builtins' }
 SlangBasicTranslationTest >> testSendCCodeAsArgumentWithBlock [
 
 	| translation send |
@@ -3240,8 +3030,7 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueWithSingleExpressionDoesNotAddsS
 	self assert: translation trimBoth equals: 'return 
 #  if FEATURE
 		(a = 0)
-#  endif /* FEATURE */
-		;'
+#  endif /* FEATURE */'
 ]
 
 { #category : 'tests-builtins' }
@@ -3678,14 +3467,14 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueWithSingleStatementArguments [
 		        setSelector: #ifFalse:ifTrue:
 		        receiver: (TVariableNode new setName: 'x')
 		        arguments: { 
-				        TVariableNode new setName: 'foo'.
-				        TVariableNode new setName: 'bar' }.
+				        TVariableNode new setName: 'break'.
+				        TVariableNode new setName: 'continue' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	bar;
+	continue;
  else 
-	foo;'
+	break;'
 ]
 
 { #category : 'tests-builtins' }
@@ -4470,14 +4259,14 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseWithSingleStatementArguments [
 		        setSelector: #ifTrue:ifFalse:
 		        receiver: (TVariableNode new setName: 'x')
 		        arguments: { 
-				        TVariableNode new setName: 'foo'.
-				        TVariableNode new setName: 'bar' }.
+				        TVariableNode new setName: 'break'.
+				        TVariableNode new setName: 'continue' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	foo;
+	break;
  else 
-	bar;'
+	continue;'
 ]
 
 { #category : 'tests-builtins' }
@@ -4581,11 +4370,11 @@ SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
 	send := TSendNode new
 		        setSelector: #ifTrue:
 		        receiver: (TVariableNode new setName: 'x')
-		        arguments: { TVariableNode new setName: 'foo' }.
+		        arguments: { TVariableNode new setName: 'break' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	foo;'
+	break;'
 ]
 
 { #category : 'tests-builtins' }
@@ -4607,9 +4396,7 @@ SlangBasicTranslationTest >> testSendIntegerObjectOfConstantValue [
 SlangBasicTranslationTest >> testSendIntegerObjectOfSignedValue [
 
 	| translation send |
-	
-	generator currentMethod addLocal: 'var'; declarationAt: 'var' put: 'long'.
-		
+	generator currentMethod declarationAt: 'var' put: 'long'.
 	send := TSendNode new
 					setSelector: #integerObjectOf:
 					receiver: (TVariableNode named: 'self')
@@ -4623,7 +4410,7 @@ SlangBasicTranslationTest >> testSendIntegerObjectOfSignedValue [
 SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedSmallValue [
 
 	| translation send |
-	generator currentMethod addLocal: 'var'; declarationAt: 'var' put: 'unsigned short'.
+	generator currentMethod declarationAt: 'var' put: 'unsigned short'.
 	send := TSendNode new
 					setSelector: #integerObjectOf:
 					receiver: (TVariableNode named: 'self')
@@ -4637,18 +4424,14 @@ SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedSmallValue [
 SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedValue [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'var';
-		declarationAt: 'var' put: 'unsigned long'.
+	generator currentMethod declarationAt: 'var' put: 'unsigned long'.
 	send := TSendNode new
-		        setSelector: #integerObjectOf:
-		        receiver: (TVariableNode named: 'self')
-		        arguments: { (TVariableNode named: 'var') }.
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
 	translation := self translate: send.
 
-	self
-		assert: translation
-		equals: '((var << ' , numSmallIntegerTagBits asString , ') | 1)'
+	self assert: translation equals: '((var << ', numSmallIntegerTagBits asString, ') | 1)'
 ]
 
 { #category : 'tests-builtins' }
@@ -4749,7 +4532,7 @@ SlangBasicTranslationTest >> testSendLeftBitShifNegativeLitteralIntegerOverflow 
 SlangBasicTranslationTest >> testSendLeftBitShift [
 
 	| translation send |
-	generator currentMethod addLocal:'a'; declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod declarationAt: 'a' put: 'sqInt'.
 	send := TSendNode new
 		        setSelector: #<<
 		        receiver: (TVariableNode new setName: 'a')
@@ -4763,12 +4546,10 @@ SlangBasicTranslationTest >> testSendLeftBitShift [
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariable [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'unsigned short'.
-
+	generator currentMethod declarationAt: 'a' put: 'unsigned short'.
+	
 	send := TSendNode new
-		        setSelector: #'<<'
+		        setSelector: #<<
 		        receiver: (TConstantNode value: 3)
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
@@ -4780,11 +4561,9 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariable [
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn32Bits [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod declarationAt: 'a' put: 'sqInt'.
 	send := TSendNode new
-		        setSelector: #'<<'
+		        setSelector: #<<
 		        receiver: (TConstantNode value: 3)
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
@@ -4796,12 +4575,10 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn32Bits [
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn64Bits [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod declarationAt: 'a' put: 'sqInt'.
 	generator wordSize: 8.
 	send := TSendNode new
-		        setSelector: #'<<'
+		        setSelector: #<<
 		        receiver: (TConstantNode value: 3)
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
@@ -4813,11 +4590,9 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn64Bits [
 SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'sqLong'.
+	generator currentMethod declarationAt: 'a' put: 'sqLong'.
 	send := TSendNode new
-		        setSelector: #'<<'
+		        setSelector: #<<
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4829,11 +4604,9 @@ SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 SlangBasicTranslationTest >> testSendLeftBitShiftShortType [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'short'.
+	generator currentMethod declarationAt: 'a' put: 'short'.
 	send := TSendNode new
-		        setSelector: #'<<'
+		        setSelector: #<<
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4845,11 +4618,9 @@ SlangBasicTranslationTest >> testSendLeftBitShiftShortType [
 SlangBasicTranslationTest >> testSendLeftBitShiftUnsigned [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'usqInt'.
+	generator currentMethod declarationAt: 'a' put: 'usqInt'.
 	send := TSendNode new
-		        setSelector: #'<<'
+		        setSelector: #<<
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4861,11 +4632,9 @@ SlangBasicTranslationTest >> testSendLeftBitShiftUnsigned [
 SlangBasicTranslationTest >> testSendLeftBitShiftUnsignedShortType [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'unsigned short'.
+	generator currentMethod declarationAt: 'a' put: 'unsigned short'.
 	send := TSendNode new
-		        setSelector: #'<<'
+		        setSelector: #<<
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -5097,21 +4866,17 @@ SlangBasicTranslationTest >> testSendPerformWith [
 SlangBasicTranslationTest >> testSendPerformWithAccessor [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'aPrimitiveDescriptor';
-		declarationAt: 'aPrimitiveDescriptor' put: #'PrimitiveDescriptor *'.
+	generator currentMethod declarationAt: 'aPrimitiveDescriptor' put: #'PrimitiveDescriptor *'.
 	send := TSendNode new
 		        setSelector: #perform:
 		        receiver: (TVariableNode named: 'objectRepresentation')
-		        arguments: { (TSendNode new
-				         setSelector: #primitiveGenerator
-				         receiver: (TVariableNode named: 'aPrimitiveDescriptor')
-				         arguments: #(  )) }.
+		        arguments: { TSendNode new
+			        setSelector: #primitiveGenerator
+			        receiver: (TVariableNode named: 'aPrimitiveDescriptor')
+			        arguments: #() }.
 	translation := self translate: send.
 
-	self
-		assert: translation
-		equals: '(primitiveGenerator(aPrimitiveDescriptor))()'
+	self assert: translation equals: '(primitiveGenerator(aPrimitiveDescriptor))()'
 ]
 
 { #category : 'tests-builtins' }
@@ -5250,12 +5015,10 @@ SlangBasicTranslationTest >> testSendRepeat [
 SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod declarationAt: 'a' put: 'sqInt'.
 	generator wordSize: 8.
 	send := TSendNode new
-		        setSelector: #'>>'
+		        setSelector: #>>
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -5267,11 +5030,9 @@ SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'usqInt'.
+	generator currentMethod declarationAt: 'a' put: 'usqInt'.
 	send := TSendNode new
-		        setSelector: #'>>'
+		        setSelector: #>>
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -5283,12 +5044,10 @@ SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
 SlangBasicTranslationTest >> testSendRightBitShiftUnsignedIn64Bits [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'usqInt'.
+	generator currentMethod declarationAt: 'a' put: 'usqInt'.
 	generator wordSize: 8.
 	send := TSendNode new
-		        setSelector: #'>>'
+		        setSelector: #>>
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -5556,38 +5315,14 @@ SlangBasicTranslationTest >> testSendSignedIntToShort [
 SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
 	| translation send |
-	generator currentMethod
-		addLocal: 'a';
-		declarationAt: 'a' put: 'long long'.
+	generator currentMethod declarationAt: 'a' put: 'long long'.
 	send := TSendNode new
-		        setSelector: #'>>>'
+		        setSelector: #>>>
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
 	self assert: translation equals: '((sqLong) a ) >> 3'
-]
-
-{ #category : 'tests-builtins' }
-SlangBasicTranslationTest >> testSendStructAccessorWithReservedWordSelector [
-	"Tests if the renaming of the accessors impacts the struct accessing"
-
-	| translation send |
-	generator addStructClasses: { MockVMStructWithReservedWords }.
-	generator renameKeywordsConflicts.
-
-	generator pushScope:
-		(TStatementListNode new addDeclarations: (Dictionary new
-				  at: 'structInstance' put: 'MockVMStructWithReservedWords*';
-				  yourself)).
-	send := TSendNode
-		        receiver: (TVariableNode named: 'structInstance')
-		        selector: #case
-		        arguments: {  }.
-
-	translation := self translate: send.
-
-	self assert: translation equals: '(structInstance->case_1)'
 ]
 
 { #category : 'tests-assignment' }
@@ -5779,12 +5514,11 @@ SlangBasicTranslationTest >> testSendToByDo [
 
 { #category : 'tests-builtins' }
 SlangBasicTranslationTest >> testSendToByDoLimitExpressionHasSideEffect [
-	"1 to: (var foo) by: 2 do: [ var := var -7 ]"
 
+	"1 to: (var foo) by: 2 do: [ var := var -7 ]"
 	"In the C for loop, the limit expression is executed at each iteration.
 	In Pharo, the limit expression (var foo in this exemple) is executed only once, the value is then passed as argument to the function to:by:do:.
 	If the limit expression has side-effect, a limit variable is declared, for both safety and efficiency."
-
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -5795,7 +5529,7 @@ SlangBasicTranslationTest >> testSendToByDoLimitExpressionHasSideEffect [
 	send := TSendNode new
 		        setSelector: #to:by:do:
 		        receiver: (TConstantNode value: 1)
-		        arguments: {
+		        arguments: { 
 				        (TSendNode new
 					         setSelector: #foo
 					         receiver: (TVariableNode new setName: 'var')
@@ -5807,14 +5541,12 @@ SlangBasicTranslationTest >> testSendToByDoLimitExpressionHasSideEffect [
 					         { (TAssignmentNode new
 						          setVariable: variable
 						          expression: expression) }).
-				        (TVariableNode new setName: 'i').
-				        (TVariableNode new setName: 'toDoLimit') }.
+						(TVariableNode new setName: 'toDoLimit') }.
 	translation := self translate: send.
 
 	self
 		assert: translation trimBoth
-		equals:
-			'for (i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
+		equals: 'for (i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
 	var -= 7;
 }'
 ]
@@ -6169,9 +5901,9 @@ SlangBasicTranslationTest >> testSendWhileFalseWithoutArguments [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do {
+	self assert: translation trimBoth equals: 'do{
 	var -= 7;
-} while (!(var >= 21));'
+}while(!(var >= 21))'
 ]
 
 { #category : 'tests-builtins' }
@@ -6233,12 +5965,12 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 						          receiver: (TVariableNode new setName: 'a')
 						          arguments: { (TVariableNode new setName: 'b') }) })
 		        arguments: { (TStatementListNode new statements:
-				         { (TConstantNode new setValue: nil) }) }.
+				         { (TVariableNode new setName: 'nil') }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do {
+	self assert: translation trimBoth equals: 'do{
 	var -= 7;
-} while (a < b);'
+}while(a < b)'
 ]
 
 { #category : 'tests-builtins' }
@@ -6297,9 +6029,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporary [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do {
+	self assert: translation trimBoth equals: 'do{
 	var -= 7;
-} while (var >= 21);'
+}while(var >= 21)'
 ]
 
 { #category : 'tests-builtins' }
@@ -6329,11 +6061,11 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporaryDeclaration [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do {
+	self assert: translation trimBoth equals: 'do{
 	int temp;
 
 	var -= 7;
-} while (var >= 21);'
+}while(var >= 21)'
 ]
 
 { #category : 'tests-builtins' }
@@ -6361,9 +6093,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do {
+	self assert: translation trimBoth equals: 'do{
 	var -= 7;
-} while (var >= 21);'
+}while(var >= 21)'
 ]
 
 { #category : 'tests-assignment' }
@@ -6376,27 +6108,6 @@ SlangBasicTranslationTest >> testSendWordSize [
 			                arguments: { }).
 
 	self assert: translation equals: 'BytesPerWord'
-]
-
-{ #category : 'tests-builtins' }
-SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
-	"Tests if the struct field is renamed when it's a reserved word"
-
-	| translation |
-	
-	generator addStructClasses: { MockVMStructWithReservedWords }.
-	generator renameKeywordsConflicts.
-	generator vmClass: VMClass.
-
-	translation := String streamContents: [ :s | generator emitCTypesOn: s ].
-
-	self assert: translation equals: 'typedef struct {
-	char *foo;
-	char *case_1;
- } MockVMStructWithReservedWords;
-
-
-'
 ]
 
 { #category : 'tests-case' }
@@ -6417,8 +6128,7 @@ switch (currentBytecode) {
 		someBytecode();
 	}
 	break;
-}
-'
+}'
 ]
 
 { #category : 'tests-switch' }
@@ -6632,9 +6342,7 @@ SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOf
 SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOfCasesWithNoDefaultStatement [
 
 	| translation |
-	generator currentMethod
-		addLocal: 'toto';
-		declarationAt: 'toto' put: 'int toto'.
+	generator currentMethod declarationAt: 'toto' put: 'int toto'.
 	translation := self translate: (TAssignmentNode new
 			                setVariable: (TVariableNode named: 'toto')
 			                expression: (TSwitchStmtNode new
@@ -6668,9 +6376,7 @@ SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOf
 SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOfCasesWithNoDefaultStatementAndAssignmentVariableIsPointer [
 
 	| translation |
-	generator currentMethod
-		addLocal: 'toto';
-		declarationAt: 'toto' put: 'int* toto'.
+	generator currentMethod declarationAt: 'toto' put: 'int* toto'.
 	translation := self translate: (TAssignmentNode new
 			                setVariable: (TVariableNode named: 'toto')
 			                expression: (TSwitchStmtNode new
@@ -6769,6 +6475,7 @@ SlangBasicTranslationTest >> testSwitchStatementWithNoDefaultStatement [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAddAllLastWithComment [
+	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When there is a comment a the end of list it must stay at the end after addition was done"
 
 	| tStatementWithNoComment comment |
 	comment := TLabeledCommentNode new comment: #comment.
@@ -6781,7 +6488,7 @@ SlangBasicTranslationTest >> testTStatementAddAllLastWithComment [
 			                           (TConstantNode new setValue: 6).
 			                           comment.
 			                           comment }.
-	tStatementWithNoComment addAllLastKeepingEndComments:
+	tStatementWithNoComment addAllLast:
 		{ (TReturnNode new expression: (TConstantNode new setValue: 9)) }.
 
 	self assert: (tStatementWithNoComment isSameAs:
@@ -6797,6 +6504,7 @@ SlangBasicTranslationTest >> testTStatementAddAllLastWithComment [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAddAllLastWithoutComment [
+	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When there is a comment a the end of list it must stay at the end after addition was done"
 
 	| tStatementWithNoComment |
 	tStatementWithNoComment := TStatementListNode new statements: {
@@ -6820,6 +6528,7 @@ SlangBasicTranslationTest >> testTStatementAddAllLastWithoutComment [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithComment [
+	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When we want to remove the last expression we need to ignore comments at the end"
 
 	| tStatementWithNoComment comment |
 	comment := TLabeledCommentNode new comment: #comment.
@@ -6845,6 +6554,7 @@ SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithComment [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithoutComment [
+	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When we want to remove the last expression we need to ignore comments at the end "
 
 	| tStatementWithNoComment |
 	tStatementWithNoComment := TStatementListNode new statements: {
@@ -6928,7 +6638,7 @@ SlangBasicTranslationTest >> testTranslateLiteralArrayAssignment [
 SlangBasicTranslationTest >> testTranslateNil [
 
 	| translation |
-	translation :=  self translate: (TConstantNode new setValue: nil).
+	translation :=  self translate: (TVariableNode new setName: 'nil').
 
 	self assert: translation equals: 'null'
 ]
@@ -7030,22 +6740,6 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 			expression: expression).
 
 	self assert: translation equals: 'var += 7'
-]
-
-{ #category : 'tests-variables' }
-SlangBasicTranslationTest >> testVariableWithReservedNameShouldBeRenamed [
-
-	| method translation |
-	
-	method := self getTMethodFrom: #methodWithReservedWordLocal:.
-	
-	generator renameKeywordsConflicts.
-
-	translation := self translate: method.
-	
-	self should: (translation includesSubstring: 'char *_case').
-	self should: (translation includesSubstring: 'char *_register').
-	self should: (translation includesSubstring: '_case = nextPutAll(_register, "foo")')
 ]
 
 { #category : 'helpers' }

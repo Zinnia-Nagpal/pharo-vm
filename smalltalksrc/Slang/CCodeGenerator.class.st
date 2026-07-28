@@ -10,6 +10,7 @@ Class {
 	#instVars : [
 		'structClasses',
 		'translationDict',
+		'asArgumentTranslationDict',
 		'inlineList',
 		'constants',
 		'variables',
@@ -42,8 +43,7 @@ Class {
 		'stopOnErrors',
 		'castTranslationDict',
 		'castAsArgumentTranslationDict',
-		'wordSize',
-		'structInstanceVariableTranslations'
+		'wordSize'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -66,23 +66,30 @@ CCodeGenerator class >> isVarargsSelector: aRBSelectorNode [
 	^aRBSelectorNode value endsWith: 'printf:'
 ]
 
-{ #category : 'C translation support' }
-CCodeGenerator class >> reservedWords [
-	^#(	'auto'
-		'break'
-		'case' 'char' 'const' 'continue'
-		'default' 'do' 'double'
-		'else' "'entry' obsolete" 'enum' 'extern'
-		'float' 'for'
-		'goto'
-		'if' 'int'
-		'long'
-		'register' 'return'
-		'short' 'signed' 'sizeof' 'static' 'struct' 'switch'
-		'typedef'
-		'union' 'unsigned'
-		'void' 'volatile'
-		'while')
+{ #category : 'C code generator' }
+CCodeGenerator class >> monticelloDescriptionFor: aClass [
+	"Answer a suitable Monticello package stamp to include in the header."
+
+	| pkgInfo pkg uuid |
+	pkgInfo := aClass package.
+	pkg := MCWorkingCopy allWorkingCopies detect: [ :ea |
+		       ea packageName = pkgInfo name ].
+	pkg ancestry ancestors isEmpty ifFalse: [
+		uuid := pkg ancestry ancestors first id ].
+	^ aClass name , (pkg modified
+		   ifTrue: [ ' * ' ]
+		   ifFalse: [ ' ' ]) , pkg ancestry ancestorString , ' uuid: '
+	  , uuid asString
+]
+
+{ #category : 'C code generator' }
+CCodeGenerator class >> shortMonticelloDescriptionForClass: aClass [
+	"Answer a suitable Monticello package stamp to include in a moduleName."
+	| mdesc |
+	mdesc := [self monticelloDescriptionFor: aClass]
+				on: Error
+				do: [:ex| ^' ', Date today asString].
+	^mdesc copyFrom: 1 to: (mdesc indexOfSubCollection: ' uuid:') - 1
 ]
 
 { #category : 'accessing' }
@@ -143,23 +150,20 @@ CCodeGenerator >> addClass: aClass silently: silentlyBoolean [
 { #category : 'public' }
 CCodeGenerator >> addClassVarsFor: aClass [
 	"Add the class variables for the given class to the code base as constants."
-
-	aClass classPool associationsDo: [ :assoc |
-		self addConstantForBinding: assoc ]
+	aClass classPool associationsDo:
+		[:assoc | self addConstantForBinding: assoc]
 ]
 
 { #category : 'public' }
 CCodeGenerator >> addConstantForBinding: variableBinding [
 	"Add the pool variable to the code base as a constant."
-
 	| node val |
 	val := variableBinding value.
-	node := (useSymbolicConstants and: [ self isCLiteral: val ])
-		        ifTrue: [
-			        TDefineNode new
-				        setName: variableBinding key
-				        value: variableBinding value ]
-		        ifFalse: [ TConstantNode value: variableBinding value ].
+	node := (useSymbolicConstants and: [self isCLiteral: val])
+				ifTrue:[TDefineNode new
+							setName: variableBinding key
+							value: variableBinding value]
+				ifFalse:[TConstantNode value: variableBinding value].
 	constants at: variableBinding key put: node
 ]
 
@@ -277,6 +281,8 @@ CCodeGenerator >> addMethodsForTranslatedPrimitives: classAndSelectorList [
 			[meth preparePrimitiveName].
 		meth replaceSizeMessages.
 		self addMethod: meth].
+
+	self prepareMethods
 ]
 
 { #category : 'public' }
@@ -352,11 +358,6 @@ CCodeGenerator >> addStructClasses: classes silently: aSilentlyBoolean [
 		 (structClass withAllSuperclasses copyUpTo: SlangStructType) do:
 			[:structClassOrSuperclass|
 			 self addStructClass: structClassOrSuperclass silently: aSilentlyBoolean ]]
-]
-
-{ #category : 'public' }
-CCodeGenerator >> addStructInstanceVariableTranslation: aVariable to: aString [
-	structInstanceVariableTranslations at: aVariable asSymbol put: aString
 ]
 
 { #category : 'utilities' }
@@ -539,6 +540,26 @@ CCodeGenerator >> bytesPerWord [
 	^ 8
 ]
 
+{ #category : 'utilities' }
+CCodeGenerator >> cCodeForMethod: selector [
+
+	"Answer a string containing the C code for the given method."
+
+	"Example:
+		((CCodeGenerator new initialize addClass: TestCClass1; prepareMethods)
+			cCodeForMethod: #ifTests)"
+
+	| m s cast |
+	m := self methodNamed: selector.
+	m = nil ifTrue: [ 
+		self error: 'method not found in code base: ' , selector ].
+
+	s := ReadWriteStream on: ''.
+	cast := m asCASTIn: self.
+	cast prettyPrintOn: s.
+	^ s contents
+]
+
 { #category : 'C code generator' }
 CCodeGenerator >> cFunctionNameFor: aSelector [
 	"Create a C function name from the given selector by finding
@@ -547,7 +568,12 @@ CCodeGenerator >> cFunctionNameFor: aSelector [
 	^selectorTranslations
 		at: aSelector
 		ifAbsent:
-			[ self cSelectorName: aSelector ]
+			[| cSelector |
+			 cSelector := aSelector copyWithout: $:.
+			 aSelector last = $: ifTrue:
+				[[cSelector last = $_] whileTrue:
+					[cSelector := cSelector allButLast]].
+			 cSelector]
 ]
 
 { #category : 'C code generator' }
@@ -671,17 +697,6 @@ CCodeGenerator >> cLiteralForUnsignedInteger: anInteger longlong: llBoolean [
 	^self cLiteralForUnsignedInteger: anInteger hex: hex longlong: llBoolean
 ]
 
-{ #category : 'C translation support' }
-CCodeGenerator >> cSelectorName: aSelector [
-
-	| cSelector |
-	cSelector := aSelector copyWithout: $:.
-	aSelector last = $: ifTrue: [
-		[ cSelector last = $_ ] whileTrue: [
-			cSelector := cSelector allButLast ] ].
-	^ cSelector
-]
-
 { #category : 'inlining' }
 CCodeGenerator >> cannotInline: selector [
 
@@ -743,47 +758,18 @@ CCodeGenerator >> checkClassForNameConflicts: aClass [
 ]
 
 { #category : 'utilities' }
-CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [
-
-	vars do: [ :var |
-		(variables includes: var) ifTrue: [
-			((variableDeclarations at: var ifAbsent: [ '' ]) beginsWith:
-				 #implicit) ifFalse: [ "find the set of method names using this global var"
-				(globalVariableUsage at: var ifAbsentPut: [ Set new ]) add:
-					aTMethod selector ] ] ].
+CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [ 
+	vars do:
+		[:var |
+		(variables includes: var) ifTrue: "find the set of method names using this global var"
+			[(globalVariableUsage at: var ifAbsentPut: [Set new])
+				add: aTMethod selector]].
 	aTMethod clearReferencesToGlobalStruct.
-	(aTMethod allLocals select: [ :l | self reservedWords includes: l ])
-		do: [ :l |
-			| em |
-			em := aTMethod definingClass name , '>>'
-			      , aTMethod smalltalkSelector
-			      , ' has variable that is a C reserved word: ' , l.
-			self error: em.
-			self logger
-				cr;
-				nextPutAll: em;
-				cr;
-				flush ]
-]
-
-{ #category : 'error notification' }
-CCodeGenerator >> checkForVariableNameConflict: var inMethod: m [
-
-	(variables includes: var) ifTrue: [
-		self error:
-			'Local variable ''' , var , ''' may mask global when inlining '
-			, m selector ].
-	((methods at: var ifAbsent: [ nil ])
-		 ifNil: [ false ]
-		 ifNotNil: [ :m1 | m1 isStructAccessor not ]) ifTrue: [
-		logger
-			newLine;
-			nextPutAll: 'Local variable name ''';
-			nextPutAll: var;
-			nextPutAll: ''' in ';
-			nextPutAll: m selector;
-			nextPutAll: ' may mask method when inlining';
-			cr ]
+	(aTMethod allLocals select: [:l| self reservedWords includes: l]) do:
+		[:l| | em |
+		em := aTMethod definingClass name, '>>', aTMethod smalltalkSelector, ' has variable that is a C reserved word: ', l.
+		self error: em.
+		self logger cr; nextPutAll: em; cr; flush]
 ]
 
 { #category : 'inlining' }
@@ -904,7 +890,7 @@ CCodeGenerator >> conventionalTypeForType: aCTypeString [
 	 C type comparisons are simple string comparisons; therefore the convention matters.
 	 Ensure there is a space between the base type and any trailing *'s. Trim whitespace."
 	| type index |
-	type := aCTypeString trimBoth.
+	type := aCTypeString withBlanksTrimmed.
 	index := type size.
 	[(type at: index) == $*] whileTrue:
 		[index := index - 1].
@@ -968,8 +954,7 @@ CCodeGenerator >> declareModuleName: nameString [
 
 { #category : 'public' }
 CCodeGenerator >> declareVar: varName type: type [
-	"This both creates a variable and provides its type"
-
+	"This both creates a varable and provides its type"
 	self var: (variables add: varName asString) type: type
 ]
 
@@ -1000,11 +985,8 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress inliner |
+	| pass progress |
 	self collectInlineList: inlineFlagOrSymbol.
-	inliner := SLInliner new
-		           codeGenerator: self;
-		           yourself.
 	pass := 0.
 	progress := true.
 	[ progress ] whileTrue: [ "repeatedly attempt to inline methods until no further progress is made"
@@ -1018,7 +1000,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 				(self sortMethods: methods) doWithIndex: [ :m :i |
 					bar value: i.
 					self currentMethod: m.
-					(inliner doInliningIn: m) ifTrue: [ progress := true ] ] ] ]
+					(m tryToInlineMethodsIn: self) ifTrue: [ progress := true ] ] ] ]
 ]
 
 { #category : 'inlining' }
@@ -1037,31 +1019,21 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	| verbose methodList |
 	"method preparation"
 	verbose := false.
+	self prepareMethods.
 	verbose ifTrue: [
 		self printUnboundCallWarnings.
 		self printUnboundVariableReferenceWarnings.
 		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
-	self renameConflictingMethods.
-	self renameKeywordsConflicts.
-
 	self doInlining: inlineFlag.
+	SLDeadCodeEliminationVisitor new removeDeadCodeUsing: self.
 
 	SLAutomaticLocalization new
 		codeGenerator: self;
 		applyMethodNamed: #interpret.
 
-	"clean out no longer valid variable names and then
-	 handle any global variable usage in each method"
-	methods do: [ :m |
-		self
-			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
-			in: m ].
-	self localizeGlobalVariables.
-	SLDeadCodeElimination new removeDeadCodeUsing: self.
 	"code generation"
-
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
 	 macros that affect all C code in the interpreter,  and 2, so that all primitive
@@ -1072,8 +1044,13 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	(methods includesKey: #interpret) ifTrue: [
 		methodList := { (methods at: #interpret) }
 		              , (methodList copyWithout: (methods at: #interpret)) ].
-
-
+	"clean out no longer valid variable names and then
+	 handle any global variable usage in each method"
+	methodList do: [ :m |
+		self
+			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
+			in: m ].
+	self localizeGlobalVariables.
 
 	self emitCHeaderOn: aStream.
 	self emitCConstantsOn: aStream.
@@ -1243,7 +1220,7 @@ CCodeGenerator >> emitCTypesOn: aStream [
 	"Store local type declarations on the given stream."
 	self structClasses do: [:structClass|
 		(self shouldGenerateStruct: structClass) ifTrue: [
-			structClass printTypedefOn: aStream withTranslations: structInstanceVariableTranslations.
+			structClass printTypedefOn: aStream.
 			aStream cr; cr ] ]
 ]
 
@@ -1358,25 +1335,51 @@ CCodeGenerator >> extractTypeFor: aVariable fromDeclaration: aVariableDeclaratio
 { #category : 'C code generator' }
 CCodeGenerator >> fileHeaderVersionStampForSourceClass: sourceClass [
 	"Answer a suitable version stamp to include in the header."
-
-	| exportBuildInfo |
-	sourceClass ifNotNil: [
-			exportBuildInfo := sourceClass isInterpreterClass
-				                   ifTrue: [ 'char *__interpBuildInfo = ' ]
-				                   ifFalse: [
-				                   sourceClass isCogitClass ifTrue: [
-					                   'char *__cogitBuildInfo = ' ] ] ].
-
-	^ String streamContents: [ :s |
-			  s nextPutAll: '/* Automatically generated by Slang */'.
-			  s cr.
-			  exportBuildInfo ifNotNil: [
-					  s
-						  nextPutAll: exportBuildInfo;
-						  nextPutAll: '"';
-						  nextPutAll: sourceClass name;
-						  nextPutAll: '";';
-						  cr ] ]
+	| exportBuildInfo slangDescription sourceDescription |
+	[exportBuildInfo := sourceClass isInterpreterClass
+						ifTrue: ['char *__interpBuildInfo = __buildInfo;']
+						ifFalse:
+							[sourceClass isCogitClass
+								ifTrue: ['char *__cogitBuildInfo = __buildInfo;']
+								ifFalse:
+									[sourceClass isPluginClass ifTrue:
+										[sourceClass exportBuildInfoOrNil]]]]
+		on: MessageNotUnderstood
+		do: [:ex| ex resume: false].
+	[slangDescription := self class monticelloDescriptionFor: self class.
+	 sourceClass ifNotNil:
+		[sourceDescription := [sourceClass monticelloDescription]
+								on: MessageNotUnderstood
+								do: [:ex| self class monticelloDescriptionFor: sourceClass]]]
+		on: Error
+		do: [:ex| | now |
+			now := Time dateAndTimeNow printString.
+			^String streamContents:
+				[:s|
+				s nextPutAll: '/* Automatically generated from Squeak on '.
+				s nextPutAll: now.
+				s nextPutAll: ' */'; cr; cr.
+				s nextPutAll: 'static char __buildInfo[] = "Generated on '.
+				s nextPutAll: now.
+				s nextPutAll: '. Compiled on "'.
+				s nextPutAll: '__DATE__ ;'; cr.
+				exportBuildInfo ifNotNil:
+					[s nextPutAll: exportBuildInfo; cr].
+				s cr]].
+	^String streamContents:
+		[:s|
+		s nextPutAll: '/* Automatically generated by\	' withCRs.
+		s nextPutAll: slangDescription.
+		sourceDescription ifNotNil:
+			[s nextPutAll: '\   from\	' withCRs; nextPutAll: (sourceDescription copyReplaceAll: '\' withCRs with: '\	' withCRs)].
+		s cr; nextPutAll: ' */'; cr.
+		sourceDescription ifNotNil:
+			[s nextPutAll: 'static char __buildInfo[] = "'.
+			 s nextPutAll: (sourceDescription copyReplaceAll: '\' withCRs with: '\n\', '\' withCRs).
+			 s nextPutAll: ' " __DATE__ ;'; cr.
+			exportBuildInfo ifNotNil:
+				[s nextPutAll: exportBuildInfo; cr].
+			s cr]]
 ]
 
 { #category : 'accessing' }
@@ -1503,34 +1506,18 @@ CCodeGenerator >> generateCASTAsVoidPointer: tast [
 
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTAt: tast [
-	"Add parentheses to r-value to correctly generate C code during complex inlining cases. For instance if the AST root is #at:, with a TSendNode(#+) as child, then we should generate: 
 
-	pTo1[i] = (pFrom + anInteger)[i];
-	
-	instead of the (incorrect):
-	
-	pTo1[i] = pFrom + anInteger[i];
-
-	"
 	^ CArrayAccessNode
-		  array: ((tast receiver asCASTExpressionIn: self) needsParentheses: true)
+		  array: (tast receiver asCASTExpressionIn: self)
 		  index: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTAtPut: tast [
-	" Add parentheses to lvalue to correctly generate C code for complex inlining cases. For example in:
-	
-	 '(pTo + anInteger)[i] = pFrom + anInteger[i]'
-	
-	instead of (without parentheses)
-	
-	'pTo + anInteger[i] = pFrom + anInteger[i]'
 
-	"
 	^ CAssignmentNode
 		  lvalue: (CArrayAccessNode
-				   array: ((tast receiver asCASTExpressionIn: self) needsParentheses: true)
+				   array: (tast receiver asCASTExpressionIn: self)
 				   index: (tast arguments first asCASTExpressionIn: self))
 		  operator: '='
 		  rvalue: (tast arguments last asCASTExpressionIn: self)
@@ -1712,28 +1699,6 @@ CCodeGenerator >> generateCASTBytesPerOop: tast [
 CCodeGenerator >> generateCASTBytesPerWord: tast [
 
 	^ CIdentifierNode name: 'BytesPerWord'
-]
-
-{ #category : 'CAST translation' }
-CCodeGenerator >> generateCASTCCallAsArgument: aTSendNode [
-	"Support only calls where the first arg (the function name) is a constant string"
-
-	| functionNameNode callArguments |
-	functionNameNode := aTSendNode arguments first.
-	(functionNameNode isConstant and: [ functionNameNode value isString ])
-		ifFalse: [ self error: 'unsupported' ].
-
-	callArguments := aTSendNode arguments size > 1
-		                 ifFalse: [ #(  ) ]
-		                 ifTrue: [ "Only accept literal statement lists as second argument"
-			                 self assert:
-				                 aTSendNode arguments second isStatementList.
-			                 aTSendNode arguments second statements collect: [
-				                 :e | e asCASTExpressionIn: self ] ].
-
-	^ CCallNode
-		  identifier: (CIdentifierNode name: functionNameNode value)
-		  arguments: callArguments
 ]
 
 { #category : 'CAST translation' }
@@ -2599,7 +2564,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 CCodeGenerator >> generateCASTShiftRight: tast [
 
 	| type rcvr |
-	rcvr := tast receiver asCASTExpressionIn: self.
+	rcvr := tast receiver asCASTIn: self.
 	(self
 		 is64BitIntegralVariable: tast receiver
 		 typeInto: [ :t | type := t ])
@@ -2753,6 +2718,7 @@ CCodeGenerator >> generateCASTTimesRepeat: tast [
 	| repeat |
 	repeat := CCompoundStatementNode statements: OrderedCollection new.
 	repeat needsBrackets: false.
+	repeat needsSeparator: false.
 
 	tast receiver value timesRepeat: [
 		repeat add: (tast arguments first asCASTIn: self) ].
@@ -2774,7 +2740,7 @@ CCodeGenerator >> generateCASTToByDo: tast [
 			 lvalue: (CIdentifierNode name: iterationVar)
 			 rvalue: (tast receiver asCASTExpressionIn: self)).
 	self noteUsedVariableName: iterationVar.
-	mayHaveSideEffects := tast arguments size = 5.
+	mayHaveSideEffects := tast arguments size = 4.
 	mayHaveSideEffects ifTrue: [ 
 		limitVar := tast arguments last.
 		inits add: (CAssignmentNode
@@ -2828,7 +2794,6 @@ CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar ne
 CCodeGenerator >> generateCASTToDo: tast [
 
 	| iterationVar init until step |
-"	self halt."
 	tast arguments last arguments size = 1 ifFalse: [ 
 		self error: 'wrong number of block arguments' ].
 	iterationVar := tast arguments last arguments first.
@@ -2888,7 +2853,6 @@ CCodeGenerator >> generateCASTValue: tast [
 	 to body with formals substituted for by actuals."
 
 	| substitution substitutionDict newLabels castStatements |
-"	self halt."
 	self assert: tast receiver isStatementList.
 	self assert: tast receiver arguments size = tast arguments size.
 	castStatements := CCompoundStatementNode statements:
@@ -2928,7 +2892,6 @@ CCodeGenerator >> generateCASTValueAsArgument: tast [
 	 to body with formals substituted for by actuals."
 
 	| substitution substitutionDict newLabels |
-"	self halt."
 	self assert: tast receiver isStatementList.
 	self assert: tast receiver arguments size = tast arguments size.
 	substitution := tast receiver copy.
@@ -3141,7 +3104,6 @@ CCodeGenerator >> initialize [
 	logger := (ProvideAnswerNotification new tag: #logger; signal) ifNil: [Transcript].
 	pools := IdentitySet new.
 	selectorTranslations := IdentityDictionary new.
-	structInstanceVariableTranslations := IdentityDictionary new.
 	suppressAsmLabels := false.
 	previousCommentMarksInlining := false.
 	previousCommenter := nil.
@@ -3207,7 +3169,6 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#==			#generateCASTEqual:
 	#~~			#generateCASTNotEqual:
 	#isNil			#generateCASTIsNil:
-	#isNotNil			#generateCASTNotNil:
 	#notNil			#generateCASTNotNil:
 
 	#whileTrue: 	#generateCASTWhileTrue:
@@ -3239,8 +3200,6 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#isIntegerObject: 			#generateCASTIsIntegerObject:
 	#cCode:					#generateCASTInlineCCode:
 	#cCode:inSmalltalk:			#generateCASTInlineCCode:
-	#cCall:                  #generateCASTCCallAsArgument:
-	#cCall:withArguments:    #generateCASTCCallAsArgument:
 	#cppIf:ifTrue:ifFalse:		#generateCASTInlineCppIfElse:
 	#cppIf:ifTrue:				#generateCASTInlineCppIfElse:
 	#cCoerce:to:				#generateCASTCCoercion:
@@ -3474,6 +3433,9 @@ CCodeGenerator >> isConstantNode: aNode valueInto: aBlock [
 			ifTrue: [ ^ false ].
 		aBlock value: aNode value.
 		^ true ].
+	(aNode isVariable and: [ aNode name = #nil ]) ifTrue: [ 
+		aBlock value: nil.
+		^ true ].
 	aNode isSend ifTrue: [ 
 		(self anyMethodNamed: aNode selector)
 			ifNil: [ 
@@ -3638,13 +3600,6 @@ CCodeGenerator >> isSpecialSelector: aSelector [
 	^ castTranslationDict includesKey: aSelector
 ]
 
-{ #category : 'testing' }
-CCodeGenerator >> isStructAccessorWithNoSideEffect: aSendNode [
-	"a non-bug free check for now"
-
-	^ aSendNode numArgs = 0 and: [ self isStructSend: aSendNode ]
-]
-
 { #category : 'utilities' }
 CCodeGenerator >> isStructSend: aTSendNode [
 	"Answer if the argument aTSendNode is a send of a structure accessor.
@@ -3672,48 +3627,47 @@ CCodeGenerator >> isVoidPointer: aCType [ "<String>"
 
 { #category : 'utilities' }
 CCodeGenerator >> localizeGlobalVariables [
-
 	| candidates elected localized |
+
 	"find all globals used in only one method"
-	candidates := globalVariableUsage select: [ :e | e size = 1 ].
-	"Don't localize globals"
-	(candidates keys select: [ :k | self mustBeGlobal: k ]) do: [ :k |
-		candidates removeKey: k ].
+	candidates := globalVariableUsage select: [:e | e size = 1].
+	"Don't localize globals; nor those that are only assigned to; they're for debugging..."
+	(candidates keys select: [:k| (self mustBeGlobal: k)
+								or: [(self methodNamed: (globalVariableUsage at: k) anyOne)
+										ifNil: [false]
+										ifNotNil: [:m| (m readsVariable: k) not]]]) do:
+		[:k| candidates removeKey: k].
+	
 	elected := Set new.
 	localized := Dictionary new. "for an ordered report"
 	"move any suitable global to be local to the single method using it"
-	candidates keysAndValuesDo: [ :key :targets |
-		targets do: [ :name |
-			(methods at: name ifAbsent: [  ]) ifNotNil: [ :procedure |
-				| newDeclaration |
-				(procedure isRealMethod and: [
-					 self shouldGenerateMethod: procedure ]) ifTrue: [
-					(localized at: name ifAbsentPut: [ SortedCollection new ]) add:
-						key.
+	candidates keysAndValuesDo:
+		[:key :targets |
+		targets do:
+			[:name |
+			(methods at: name ifAbsent: []) ifNotNil:
+				[:procedure | | newDeclaration |
+				(procedure isRealMethod
+				 and: [self shouldGenerateMethod: procedure]) ifTrue:
+					[(localized at: name ifAbsentPut: [SortedCollection new]) add: key.
 					elected add: (procedure addLocal: key).
-					newDeclaration := variableDeclarations
-						                  at: key
-						                  ifAbsent: [ 'sqInt ' , key ].
-					(self
-						 initializerForInstVar: key
-						 inStartClass: procedure definingClass) ifNotNil: [
-						:initializerNode |
-						newDeclaration := String streamContents: [ :s |
-							                  s
-								                  nextPutAll: newDeclaration;
-								                  nextPutAll: ' = '.
-							                  (initializerNode asCASTIn: self)
-								                  prettyPrintOn: s ] ].
-					procedure declarationAt: key put: newDeclaration ] ] ] ].
-	logger ifNotNil: [
-		localized keys asSortedCollection do: [ :name |
-			(localized at: name) do: [ :var |
-				logger
-					cr;
-					show: var , ' localised to ' , name;
-					cr ] ] ].
+					newDeclaration := variableDeclarations at: key ifAbsent: ['sqInt ', key].
+					(self initializerForInstVar: key inStartClass: procedure definingClass) ifNotNil:
+						[:initializerNode|
+						newDeclaration := String streamContents:
+												[:s|
+												 s nextPutAll: newDeclaration; nextPutAll: ' = '.
+												(initializerNode asCASTIn: self) prettyPrintOn: s ]].
+					procedure declarationAt: key put: newDeclaration.
+					variableDeclarations removeKey: key ifAbsent: []]]]].
+	logger ifNotNil:
+		[localized keys asSortedCollection do:
+			[:name|
+			(localized at: name) do:
+				[:var|
+				logger newLine; show: var, ' localised to ', name; cr]]].
 
-	elected do: [ :var | self removeVariable: var ]
+	variables removeAllFoundIn: elected
 ]
 
 { #category : 'inlining' }
@@ -3721,14 +3675,15 @@ CCodeGenerator >> localizeVariables: varsList inMethod: m [
 
 	self validateLocalizationOfGlobals: varsList exceptMethod: m selector.
 	m localizeVariables: varsList.
-	varsList do: [ :v |
+	varsList do: [ :v | 
 		| varString |
 		varString := v asString.
-		(variableDeclarations includesKey: varString) ifTrue: [
+		variables remove: varString ifAbsent: [  ].
+		(variableDeclarations includesKey: varString) ifTrue: [ 
 			m
 				declarationAt: v asString
-				put: (variableDeclarations at: varString) ].
-		self removeVariable: varString ]
+				put: (variableDeclarations at: varString).
+			variableDeclarations removeKey: varString ] ]
 ]
 
 { #category : 'utilities' }
@@ -3877,12 +3832,6 @@ CCodeGenerator >> mostBasicConstantSelectors [
 
 { #category : 'utilities' }
 CCodeGenerator >> mustBeGlobal: aName [
-
-	^ false
-]
-
-{ #category : 'utilities' }
-CCodeGenerator >> mustBeGlobalAndExport: aName [
 	^ false
 ]
 
@@ -3897,25 +3846,30 @@ CCodeGenerator >> needToGenerateHeader: headerName file: interpHdrPath contents:
 	newContents := newContentsArg.
 	oldContents := interpHdrPath asFileReference contents.
 	oldContents := oldContents
-		               copyReplaceAll: {
+		               copyReplaceAll: { 
 				               Character cr.
 				               Character lf }
 		               with: { Character cr }.
 	oldContents replaceAll: Character lf with: Character cr.
 	dirtyStamp := (oldContents indexOfSubCollection: '* VMMaker') ~= 0.
-	(newContents beginsWith: '/*') = (oldContents beginsWith: '/*')
-		ifFalse: [
-				(newContents beginsWith: '/*') ifTrue: [
-						newContents := newContents readStream
-							               upToAll: '*/';
-							               skipSeparators;
-							               upToEnd ].
-				(oldContents beginsWith: '/*') ifTrue: [
-						oldContents := oldContents readStream
-							               upToAll: '*/';
-							               skipSeparators;
-							               upToEnd ] ].
-	^ oldContents ~= newContents
+	(newContents beginsWith: '/*') = (oldContents beginsWith: '/*') 
+		ifFalse: [ 
+			(newContents beginsWith: '/*') ifTrue: [ 
+				newContents := newContents readStream
+					               upToAll: '*/';
+					               skipSeparators;
+					               upToEnd ].
+			(oldContents beginsWith: '/*') ifTrue: [ 
+				oldContents := oldContents readStream
+					               upToAll: '*/';
+					               skipSeparators;
+					               upToEnd ] ].
+	^ oldContents ~= newContents or: [ 
+		  (dirtyStamp and: [ self shouldGenerateHeader ]) or: [ 
+			  self confirm: headerName
+				  ,
+					  ' contents are unchanged.\Writing the file may cause recompilation of support files.\Do you want to write the header file?'
+						  withCRs ] "If no stamp don't worry" ]
 ]
 
 { #category : 'utilities' }
@@ -4017,8 +3971,8 @@ CCodeGenerator >> nilOrBooleanConstantReceiverOf: aNode [
 			ifTrue: [ ^ receiver perform: aNode selector with: argument ].
 		"Inlining for e.g. CharacterTable ifNil: [...] ifNotNil: [...]], which compiles to CharacterTable == nil ifTrue: [...] ifFalse: [...]"
 		(aNode selector == #== and: [ 
-			 aNode arguments first isConstant and: [ 
-				 aNode arguments first value = nil and: [ 
+			 aNode arguments first isVariable and: [ 
+				 aNode arguments first name = 'nil' and: [ 
 					 aNode receiver isConstant and: [ aNode receiver value == nil ] ] ] ]) 
 			ifTrue: [ ^ true ] ].
 	^ nil
@@ -4168,12 +4122,6 @@ CCodeGenerator >> outputAsmLabel: selector on: aStream [
 ]
 
 { #category : 'C code generator' }
-CCodeGenerator >> popScope [
-
-	scopeStack removeLast
-]
-
-{ #category : 'C code generator' }
 CCodeGenerator >> preDeclareInterpreterProxyOn: aStream [
 	"Put the necessary #defines needed before interpreterProxy.  Basically
 	 internal plugins use the VM's interpreterProxy variable and external plugins use
@@ -4186,19 +4134,24 @@ CCodeGenerator >> preDeclareInterpreterProxyOn: aStream [
 
 { #category : 'utilities' }
 CCodeGenerator >> prepareMethods [
-
 	| globals |
 	globals := Set new: 200.
-	globals addAll: variables
-		, (apiVariables ifNotNil: [ apiVariables keys ] ifNil: [ #(  ) ]).
-	methods do: [ :m |
-		m
-			renameLocalVariablesGivenClassVariables: constants
-			andGlobalVariables: globals
-			inCodeGenerator: self.
-		m allLocals , m args do: [ :var |
-			self checkForVariableNameConflict: var inMethod: m ].
-		m prepareMethodIn: self ]
+	globals addAll: variables.
+	methods do:
+		[:m |
+		m allLocals, m args do:
+			[:var |
+			(globals includes: var) ifTrue:
+				[self error: 'Local variable ''', var, ''' may mask global when inlining ', m selector].
+			((methods at: var ifAbsent: [nil]) ifNil: [false] ifNotNil: [:m1| m1 isStructAccessor not]) ifTrue:
+				[logger
+					newLine;
+					nextPutAll: 'Local variable name ''', var, ''' in ';
+					nextPutAll: m selector;
+					nextPutAll: ' may mask method when inlining';
+					cr]].
+		m bindClassVariablesIn: constants.
+		m prepareMethodIn: self]
 ]
 
 { #category : 'accessing' }
@@ -4447,8 +4400,9 @@ CCodeGenerator >> removeAssertions [
 
 { #category : 'utilities' }
 CCodeGenerator >> removeConstant: aName [
-	"mark the given (class or library) variable as already define."
-	constants at:  aName ifPresent: [ :val | val shouldBeGenerated: false ] ifAbsent: []
+	"Remove the given (class) variable from the code base."
+
+	constants removeKey:  aName ifAbsent: []
 ]
 
 { #category : 'utilities' }
@@ -4472,78 +4426,27 @@ CCodeGenerator >> removeVariable: aName [
 { #category : 'utilities' }
 CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	"Remove the given (instance) variable from the code base."
-
-	variableDeclarations removeKey: aName ifAbsent: [  ].
-	globalVariableUsage removeKey: aName ifAbsent: [  ].
-	^ variables remove: aName ifAbsent: ifAbsentBlock
-]
-
-{ #category : 'renaming' }
-CCodeGenerator >> renameConflictingMethods [
-
-	| cFunctionNames toRename |
-	cFunctionNames := IdentityDictionary new.
-
-	methods reject: [ :m | m isStructAccessor ] thenDo: [ :m |
-		| functionName conflicts |
-		functionName := self cFunctionNameFor: m selector.
-
-		conflicts := cFunctionNames at: functionName ifAbsent: [ #(  ) ].
-
-		cFunctionNames at: functionName put: (conflicts copyWith: m) ].
-
-	toRename := cFunctionNames select: [ :conflicts | conflicts size > 1 ].
-
-	toRename keysAndValuesDo: [ :key :conflictingMethods |
-		(conflictingMethods select: [ :m | m isAPIMethod ]) size > 1
-			ifTrue: [ "api methods cannot be renamed"
-				TranslationError signal:
-					'Conflicting API methods would be translated to "' , key , '"' ].
-
-		conflictingMethods
-			reject: [ :m | m isAPIMethod ]
-			thenDo: [ :m |
-				self
-					addSelectorTranslation: m selector
-					to: key , m args size asString ] ]
-]
-
-{ #category : 'renaming' }
-CCodeGenerator >> renameKeywordsConflicts [
-
-	methods do: [ :method |
-		| localRewording cSelector |
-		"rename locals"
-		localRewording := Dictionary new.
-
-		
-		method allLocals 
-			select: [ :local | self reservedWords includes: local ]
-			thenDo: [ :local | localRewording at: local put: (self sanitizeKeyword: local) ].
-
-		localRewording ifNotEmpty: [
-			method renameVariablesUsing: localRewording ].
-
-		"translate selector"
-		cSelector := self cFunctionNameFor: method selector.
-
-		(self reservedWords includes: cSelector) ifTrue: [
-			self
-				addSelectorTranslation: method selector
-				to: (self sanitizeKeyword: cSelector) ] ].
-
-	"translate structs instance variables"
-	self structClasses do: [ :struct |
-		struct instVarTypeDeclarationsDo: [ :ivn :type |
-			(self reservedWords includes: ivn) ifTrue: [
-				self
-					addStructInstanceVariableTranslation: ivn
-					to: (self sanitizeKeyword: ivn) ] ] ]
+	variableDeclarations removeKey: aName ifAbsent: [].
+	^variables remove: aName ifAbsent: ifAbsentBlock
 ]
 
 { #category : 'C translation support' }
 CCodeGenerator >> reservedWords [
-	^ self class reservedWords
+	^#(	'auto'
+		'break'
+		'case' 'char' 'const' 'continue'
+		'default' 'do' 'double'
+		'else' "'entry' obsolete" 'enum' 'extern'
+		'float' 'for'
+		'goto'
+		'if' 'int'
+		'long'
+		'register' 'return'
+		'short' 'signed' 'sizeof' 'static' 'struct' 'switch'
+		'typedef'
+		'union' 'unsigned'
+		'void' 'volatile'
+		'while')
 ]
 
 { #category : 'inlining' }
@@ -4697,12 +4600,6 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod ifNil: typeIfNil [
 		typeIfNil: typeIfNil
 ]
 
-{ #category : 'translation support' }
-CCodeGenerator >> sanitizeKeyword: aKeyword [
-
-	^ aKeyword , '_1'
-]
-
 { #category : 'accessing' }
 CCodeGenerator >> selectAPIMethods [
 	^methods select: [:m| m isAPIMethod]
@@ -4738,6 +4635,12 @@ CCodeGenerator >> selectorReturnsStruct: selector [ "<Symbol>"
 { #category : 'utilities' }
 CCodeGenerator >> selectorsAndMethodsDo: aBinaryBlock [
 	methods keysAndValuesDo: aBinaryBlock
+]
+
+{ #category : 'C code generator' }
+CCodeGenerator >> shortMonticelloDescriptionForClass: aClass [
+	"Answer a suitable Monticello package stamp to include in a moduleName."
+	^self class shortMonticelloDescriptionForClass: aClass
 ]
 
 { #category : 'utilities' }
@@ -4808,9 +4711,9 @@ CCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 	(anIntegralCType beginsWith: 'register ') ifTrue:
 		[^self sizeOfIntegralCType: (anIntegralCType allButFirst: 9)].
 	prunedCType := (anIntegralCType beginsWith: 'unsigned ')
-						ifTrue: [(anIntegralCType allButFirst: 9) trimBoth]
+						ifTrue: [(anIntegralCType allButFirst: 9) withBlanksTrimmed]
 						ifFalse: [(anIntegralCType beginsWith: 'signed ')
-									ifTrue: [(anIntegralCType allButFirst: 7) trimBoth]
+									ifTrue: [(anIntegralCType allButFirst: 7) withBlanksTrimmed]
 									ifFalse: [anIntegralCType]].
 	
 	^prunedCType asString caseOf: {
@@ -4840,7 +4743,7 @@ CCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		[((anIntegralCType beginsWith: 'unsigned') "e.g. 'unsigned  : 8'"
 		  and: [(anIntegralCType includesAnyOf: '[*]') not
 		  and: [(index := anIntegralCType indexOf: $:) > 0]])
-			ifTrue: [(Integer readFrom: (anIntegralCType copyFrom: index + 1 to: anIntegralCType size) trimBoth readStream) + 7 // 8]
+			ifTrue: [(Integer readFrom: (anIntegralCType copyFrom: index + 1 to: anIntegralCType size) withBlanksTrimmed readStream) + 7 // 8]
 			ifFalse: [self error: 'unrecognized integral type']]
 ]
 
@@ -4929,7 +4832,6 @@ CCodeGenerator >> storeCodeOnFile: fileName doInlining: inlineFlag [
 { #category : 'public' }
 CCodeGenerator >> storeCodeOnFile: fileName doInlining: inlineFlag doAssertions: assertionFlag [
 	"Store C code for this code base on the given file."
-
 	| stream |
 	stream := VMMaker forceNewFileNamed: fileName.
 	stream ifNil: [Error signal: 'Could not open C code file: ', fileName].
@@ -5027,6 +4929,22 @@ CCodeGenerator >> suppressAsmLabelsWhile: aBlock [
 ]
 
 { #category : 'utilities' }
+CCodeGenerator >> testInliningFor: selector as: inlineFlagOrSymbol [
+	"Test inlining for the method with the given selector.
+	 Do all inlining first (cuz that's how the algorithm works).
+	 Then try and inline into a copy of the method.  This isn't
+	 exactly what happens in the real deal but is close enough."
+	| meth |
+	((breakDestInlineSelectors includes:  selector)
+	 or: [(breakSrcInlineSelectors includes:  selector)]) ifTrue:
+		[self halt].
+	meth := (self methodNamed: selector) copy.
+	self doBasicInlining: inlineFlagOrSymbol.
+	self halt.
+	meth tryToInlineMethodsIn: self
+]
+
+{ #category : 'utilities' }
 CCodeGenerator >> translationMethodClass [
 	"return the class used to produce C translation methods from MethodNodes"
 	^TMethod
@@ -5101,7 +5019,7 @@ CCodeGenerator >> typeForDereference: sendNode in: aTMethod [
 	(self typeFor: sendNode receiver in: aTMethod) ifNotNil:
 		[:type|
 		 type last = $* ifTrue:
-			[^type allButLast trimBoth]].
+			[^type allButLast withBlanksTrimmed]].
 	"It would be nice to warn here, but there are contexts when the type is unknown, for example determining
 	 the return types of apiMethods.  inferTypesForImplicitlyTypedVariablesAndMethods could provide a signal
 	 handler to suppress the warnings in that case but that's too fancy.  Instead we live with the default."
@@ -5112,24 +5030,28 @@ CCodeGenerator >> typeForDereference: sendNode in: aTMethod [
 ]
 
 { #category : 'C code generator' }
-CCodeGenerator >> typeOfVariable: varName [
-	"<String>"
-
+CCodeGenerator >> typeOfVariable: varName [ "<String>"
 	self assert: varName isString.
-	scopeStack reverseDo: [ :scope |
-		(scope declarations includesKey: varName) ifTrue: [
-			^ self
-				  extractTypeFor: varName
-				  fromDeclaration: (scope declarations at: varName) ] ].
-	(variableDeclarations at: varName ifAbsent: [
-		 apiVariables
-			 ifNotNil: [ apiVariables at: varName ifAbsent: [  ] ]
-			 ifNil: [  ] ]) ifNotNil: [ :decl |
-		^ self extractTypeFor: varName fromDeclaration: decl ].
-	^ (constants at: varName ifAbsent: [  ]) ifNotNil: [ :const |
-		  const value isInteger
-			  ifTrue: [ self defaultType ]
-			  ifFalse: [ const value isFloat ifTrue: [ #double ] ] ]
+	scopeStack reverseDo:
+		[:scope|
+		(scope declarations includesKey: varName) ifTrue:
+			[^self
+				extractTypeFor: varName
+				fromDeclaration: (scope declarations at: varName)]].
+	(variableDeclarations
+		at: varName
+		ifAbsent:
+			[apiVariables
+				ifNotNil: [apiVariables at: varName ifAbsent: []]
+				ifNil: []]) ifNotNil:
+		[:decl| ^self extractTypeFor: varName fromDeclaration: decl].
+	^(constants at: varName ifAbsent: []) ifNotNil:
+		[:const|
+		const value isInteger
+			ifTrue: [self defaultType]
+			ifFalse:
+				[const value isFloat ifTrue:
+					[#double]]]
 ]
 
 { #category : 'utilities' }
@@ -5289,23 +5211,23 @@ CCodeGenerator >> var: varName type: cType sizeString: sizeString array: array [
 CCodeGenerator >> variableOfType: variableType acceptsValue: exprNode ofType: expressionType [
 	"Simple type checking for assignment/return values"
 
-	^ variableType isNil or: [
-		  expressionType isNil or: [
-			  variableType = expressionType or: [
-				  variableType notNil and: [
-					  (variableType includes: $*)
-						  ifTrue: [
-							  expressionType last = $* and: [
-								  (self isVoidPointer: variableType) or: [
-									  self isVoidPointer: expressionType ] ] ]
-						  ifFalse: [ "Require a cast if assigning integral with floating-point but not the other way around"
-							  ((self isIntegralCType: variableType) and: [
-								   (self isIntegralCType: expressionType) and: [
-									   (self sizeOfIntegralCType: variableType)
-									   >= (self sizeOfIntegralCType: expressionType) ] ]) or: [
-								  (self isFloatingPointCType: variableType) and: [
-									  (self isFloatingPointCType: expressionType) or: [
-										  self isIntegralCType: expressionType ] ] ] ] ] ] ] "means we don't know.  Potentially dangerous to say yes, but Slang is traditionally lax :(" ] "means as yet untyped, hence can adapt"
+	^variableType isNil "means as yet untyped, hence can adapt"
+	  or: [expressionType isNil "means we don't know.  Potentially dangerous to say yes, but Slang is traditionally lax :("
+	  or: [variableType = expressionType
+	  or: [variableType notNil
+		 and: [(variableType includes: $*)
+				ifTrue:
+					[(exprNode isVariable and: [exprNode name = 'nil'])
+					  or: [expressionType last = $*
+						   and: [(self isVoidPointer: variableType)
+								or: [self isVoidPointer: expressionType]]]]
+				ifFalse: "Require a cast if assigning integral with floating-point but not the other way around"
+					[((self isIntegralCType: variableType)
+					   and: [(self isIntegralCType: expressionType)
+					   and: [(self sizeOfIntegralCType: variableType) >= (self sizeOfIntegralCType: expressionType)]])
+					or: [(self isFloatingPointCType: variableType)
+						and: [(self isFloatingPointCType: expressionType)
+							or: [self isIntegralCType: expressionType]]]]]]]]
 ]
 
 { #category : 'public' }

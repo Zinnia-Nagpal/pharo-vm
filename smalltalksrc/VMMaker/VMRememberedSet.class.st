@@ -13,9 +13,8 @@ Class {
 		'previousRememberedSetSize',
 		'doFullScan'
 	],
-	#category : 'VMMaker-Memory',
-	#package : 'VMMaker',
-	#tag : 'Memory'
+	#category : 'VMMaker',
+	#package : 'VMMaker'
 }
 
 { #category : 'translation' }
@@ -155,7 +154,7 @@ VMRememberedSet >> growRememberedSet [
 	base := self rememberedSetArrayPointerFromObject: newObj.
 
 	0 to: rememberedSetSize - 1 do: [ :i |
-		base at: i put: (self rememberedSetArray at: i) ].
+	base at: i put: (self rememberedSetArray at: i) ].
 	"if growing in the middle of a GC, need to preserve marked status."
 	(manager isMarked: obj) ifTrue: [
 		manager
@@ -179,8 +178,16 @@ VMRememberedSet >> initialize [
 { #category : 'initialization' }
 VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 	| obj |
-
 	obj := self objectOop.
+	
+	(manager isInOldSpace: obj) 
+		ifFalse: [ 
+			manager logWarn: 'Remembered Set is in an invalid position %p. Signal of a corrupted root table.' _: obj.
+			shouldStartEmpty 
+				ifTrue: [ 
+					obj := manager nilObject.
+					manager logWarn: 'As it starts empty, we can ignore it' ]]. 
+	
 	obj = manager nilObject
 		ifTrue:
 			[obj := manager allocatePinnedSlots: 1024.
@@ -361,9 +368,13 @@ VMRememberedSet >> rememberedSetArray: anObject [
 ]
 
 { #category : 'initialization' }
-VMRememberedSet >> rememberedSetArrayPointerFromObject: anOop [
-
-	^ manager cCoerce: (manager firstIndexableField: anOop) to: 'sqInt *'
+VMRememberedSet >> rememberedSetArrayPointerFromObject: anOop [ 
+	
+	^ manager cCoerce: (manager firstIndexableField: anOop) to: 'usqInt *'
+	
+	
+	
+	
 ]
 
 { #category : 'accessing' }
@@ -537,7 +548,7 @@ VMRememberedSet >> shrinkRememberedSet [
 	base := self rememberedSetArrayPointerFromObject: newObj.
 
 	0 to: rememberedSetSize - 1 do: [ :i |
-		base at: i put: (self rememberedSetArray at: i) ].
+	base at: i put: (self rememberedSetArray at: i) ].
 	"if growing in the middle of a GC, need to preserve marked status."
 	(manager isMarked: obj) ifTrue: [
 		manager

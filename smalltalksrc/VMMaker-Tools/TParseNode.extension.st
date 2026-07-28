@@ -19,18 +19,3 @@ TParseNode >> inspectionTree [
 		expandAll;
 		yourself
 ]
-
-{ #category : '*VMMaker-Tools' }
-TParseNode >> newCodeGeneratorForInspection [
-
-	| cg |
-	cg := MLVMCCodeGenerator new.
-	cg vmMaker: VMMaker new.
-	cg vmMaker vmmakerConfiguration: VMMakerConfiguration.
-	cg currentMethod: (TMethod new
-			 labels: Set new;
-			 definingClass: self class;
-			 yourself).
-	cg pushScope: TStatementListNode new.
-	^ cg
-]

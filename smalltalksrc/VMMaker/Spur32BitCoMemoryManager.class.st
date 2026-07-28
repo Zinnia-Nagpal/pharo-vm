@@ -54,6 +54,15 @@ Spur32BitCoMemoryManager class >> simulatorClass [
 	^ Spur32BitMMLECoSimulator
 ]
 
+{ #category : 'growing/shrinking memory' }
+Spur32BitCoMemoryManager >> assimilateNewSegment: segInfo [
+	"Update after adding a segment.
+	 Here we make sure the new segment is not executable."
+	<var: #segInfo type: #'SpurSegmentInfo *'>
+	super assimilateNewSegment: segInfo.
+	coInterpreter sqMakeMemoryNotExecutableFrom: segInfo segStart To: segInfo segLimit
+]
+
 { #category : 'trampolines' }
 Spur32BitCoMemoryManager >> ceScheduleScavenge [
 	<api>
@@ -165,7 +174,7 @@ Spur32BitCoMemoryManager >> methodHeaderFromSavedFirstField: field [
 	^(coInterpreter cCoerceSimple: field to: #'CogMethod *') methodHeader
 ]
 
-{ #category : 'memory access' }
+{ #category : 'growing/shrinking memory' }
 Spur32BitCoMemoryManager >> methodHeaderOf: methodObj [
 	"Answer the method header of a CompiledMethod object.
 	 If the method has been cogged then the header is a pointer to
@@ -174,7 +183,7 @@ Spur32BitCoMemoryManager >> methodHeaderOf: methodObj [
 	<inline: true>
 	| header |
 	self assert: (self isCompiledMethod: methodObj).
-	header := self rawHeaderOf: methodObj.
+	header := self fetchPointer: HeaderIndex ofObject: methodObj.
 	^(self isIntegerObject: header)
 		ifTrue: [header]
 		ifFalse:
@@ -230,13 +239,6 @@ Spur32BitCoMemoryManager >> smallIntegerTag [
 	<api>
 	<cmacro>
 	^1
-]
-
-{ #category : 'trampoline support' }
-Spur32BitCoMemoryManager >> specialObjectsArrayAddress [
-	<api>
-	^self cCode: [(self addressOf: specialObjectsOop) asUnsignedInteger]
-		inSmalltalk: [cogit simulatedVariableAddress: #specialObjectsOop in: self]
 ]
 
 { #category : 'simulation only' }

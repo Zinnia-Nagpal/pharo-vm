@@ -19,7 +19,7 @@ ComposedImageReader >> endOfSTON: file [
 	^ self 
 		cCode: [ | aCharacter |
 			aCharacter := self fgetc: file.
-			self cCall: 'ungetc' withArguments: {aCharacter. file}.
+			self ungetc: aCharacter  _:file.
 			aCharacter = -1 or: [ aCharacter = $} ]] 
 		inSmalltalk: [ file peek = $} ].
 	
@@ -210,6 +210,7 @@ ComposedImageReader >> readPermanentSpaceDataFromImage: imageFileName startingAt
 ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
+	<var: #imageFile type: #sqImageFile>
 	<var: #aHeader type: #SpurImageHeaderStruct>
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
 	<var: #bytesRead type: #'size_t'>

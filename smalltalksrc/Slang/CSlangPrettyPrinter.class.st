@@ -32,45 +32,40 @@ CSlangPrettyPrinter >> expressionListHasNonCommentStatementAfter: expressions fu
 ]
 
 { #category : 'testing' }
-CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: currentExpression futureIndex: futureIndex commentSeries: inCommentSeries [
-	"handle space, comma and comment in visitExpressionList, comments only comes from inlining in an expressionList. ensure comments are not considered as element of the list and are linked to their respective methods. if the list contains an empty inlined method we can have a potential series of comments  that shouldn't be considered as element, hence the boolean isCommentSeries. Return if a comma is needed and if the comment series continue/start."
+CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: e futureIndex: futureIndex commentSeries: commentSeries [
+	"handle space, comma and comment in visitExpressionList, comments only comes from inlining in an expressionList. ensure comments are not considered as element of the list and are linked to theirs respective methods. if the list contains an empty inlined method we can have a potential series of comments  that shouldn't be considered as element, hence the boolean commentSeries. Return if a comma is needed and if the comment series continue/start.
+	"
 
-	| nextExpression futureRequireBeginningSeparator continueCommentSeries currentExpressionIsBeginComment currentExpressionIsEndComment nextExpressionIsBeginComment |
+	| next currentRequiredEndSeparator futureRequireBeginningSeparator continueCommentSeries currentIsEndComment nextIsBeginComment |
 	futureIndex > expressions size ifTrue: [ ^ { false. false } ].
+	next := expressions at: futureIndex.
 
-	nextExpression := expressions at: futureIndex.
+	currentIsEndComment := e isComment and: [
+		                       e comment beginsWith: #' end' ].
+	nextIsBeginComment := next isComment and: [
+		                      next comment beginsWith: #' begin' ].
 
-	currentExpressionIsEndComment := currentExpression isComment and: [
-		                                 currentExpression comment
-			                                 beginsWith: #' end' ].
-	currentExpressionIsBeginComment := currentExpression isComment and: [
-		                                   currentExpression comment
-			                                   beginsWith: #' begin' ].
-
-	nextExpressionIsBeginComment := nextExpression isComment and: [
-		                                nextExpression comment beginsWith:
-			                                #' begin' ].
-
-	(currentExpressionIsEndComment and: [
-		 nextExpressionIsBeginComment and: [ inCommentSeries ] ]) ifTrue: [
+	(currentIsEndComment and: [
+		 nextIsBeginComment and: [ commentSeries ] ]) ifTrue: [
 		^ { false. true } ].
 
-	continueCommentSeries := (inCommentSeries and: [
-		                          currentExpression isComment ]) or: [
-		                         inCommentSeries not and: [
-			                         currentExpressionIsBeginComment ] ].
-
-
-	futureRequireBeginningSeparator := nextExpression isComment not or: [
-		                                   nextExpressionIsBeginComment
-			                                   and: [
+	continueCommentSeries := (commentSeries and: [
+		                          e isComment and: [ next isComment ] ])
+		                         or: [ nextIsBeginComment ].
+	currentRequiredEndSeparator := e isEmpty not and: [
+		                               e isComment not or: [
+			                               currentIsEndComment ] ].
+	futureRequireBeginningSeparator := next isEmpty not and: [
+		                                   next isComment not or: [
+			                                   nextIsBeginComment and: [
 				                                   self
 					                                   expressionListHasNonCommentStatementAfter:
 					                                   expressions
-					                                   futureIndex: futureIndex ] ].
+					                                   futureIndex: futureIndex ] ] ].
 
 	^ {
-		  (continueCommentSeries not and: [ futureRequireBeginningSeparator ]).
+		  (currentRequiredEndSeparator and: [
+			   futureRequireBeginningSeparator ]).
 		  continueCommentSeries }
 ]
 
@@ -169,7 +164,7 @@ CSlangPrettyPrinter >> visitBinary: aBinary [
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitBreakStatement: aBreakStatement [
 
-	stream nextPutAll: 'break;'; cr
+	stream nextPutAll: 'break'
 ]
 
 { #category : 'generated' }
@@ -208,9 +203,7 @@ CSlangPrettyPrinter >> visitComment: aComment [
 
 	stream nextPutAll: '/*'.
 	stream nextPutAll: aComment comment.
-	stream nextPutAll: '*/'.
-	(aComment parent isNotNil and: [ aComment parent isExpression not ])
-		ifTrue: [ stream cr ]
+	stream nextPutAll: '*/'
 ]
 
 { #category : 'generated' }
@@ -227,39 +220,32 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement declarations do: [ :e |
 		first
-			ifTrue: [ first := false ]
-			ifFalse: [
-				e isEmptyStatement
-					ifFalse: [ stream tab: level  ] ].
-		e acceptVisitor: self.
-		e isExpression
-			ifTrue: [
-				stream nextPut: $;.
-				stream cr ] ].
+			ifTrue: [ first := false. ]
+			ifFalse: [ stream tab: level ].
+			e acceptVisitor: self.
+			e needsSeparator ifTrue: [ stream nextPut: $; ].
+			stream cr. ].
 	
 	"Put at least one empty line to separate declarations and statements.
 	This is required for the current GNUisation to work, which searches for empty lines"
-	aCompoundStatement declarations ifNotEmpty: [ stream cr ].
+	aCompoundStatement declarations ifNotEmpty: [
+		stream cr.
+	].
 
 	aCompoundStatement statements do: [ :e |
 		first
-			ifTrue: [ first := false ]
-			ifFalse: [
-				e isEmptyStatement
-					ifFalse: [ stream tab: level  ] ].
-		e acceptVisitor: self.
-		e isExpression
-			ifTrue: [
-				stream nextPut: $;.
-				stream cr ] ].
+			ifTrue: [ first := false. ]
+			ifFalse: [ stream tab: level ].
+			e acceptVisitor: self.
+			e needsSeparator ifTrue: [ stream nextPut: $; ]]
+		separatedBy: [ stream cr ].
 
 	aCompoundStatement needsBrackets ifTrue: [ 
 		level := level - 1.
+		(aCompoundStatement statements, aCompoundStatement declarations)
+			ifNotEmpty: [ stream cr ].
 		stream tab: level.
-		stream nextPut: $}.
-
-		aCompoundStatement isAtEndOfStatement ifTrue: [
-			stream cr ] ].
+		stream nextPut: $} ]
 ]
 
 { #category : 'generated' }
@@ -279,8 +265,7 @@ CSlangPrettyPrinter >> visitDeclaration: aDeclaration [
 		aDeclaration declarators
 			do: [ :e | e acceptVisitor: self ]
 			separatedBy: [ stream nextPutAll: ', ' ] ].
-	stream nextPut: $;.
-	stream cr.
+	aDeclaration isFunctionPrototype ifTrue: [ stream nextPut: $; ]
 ]
 
 { #category : 'generated' }
@@ -307,12 +292,11 @@ CSlangPrettyPrinter >> visitDecrement: anDecrementNode [
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 
-	stream nextPutAll: 'do '.
+	stream nextPutAll: 'do'.
 	aDoStatement statement acceptVisitor: self.
-	stream nextPutAll: ' while ('.
+	stream nextPutAll: 'while('.
 	aDoStatement while acceptVisitor: self.
-	stream nextPutAll: ');'.
-	stream cr
+	stream nextPut: $)
 ]
 
 { #category : 'generated' }
@@ -324,11 +308,11 @@ CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
-	| needCommaAndCommentSeries futureIndex expressions inCommentSeries |
+	| needCommaAndCommentSeries futureIndex expressions commentSeries |
 	stream nextPut: $(.
 	futureIndex := 1.
 	expressions := anExpressionList expressions.
-	inCommentSeries := true.
+	commentSeries := true.
 	expressions
 		do: [ :e |
 			e acceptVisitor: self.
@@ -337,8 +321,8 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 				                             expressionListNeedAComma: expressions
 				                             current: e
 				                             futureIndex: futureIndex
-				                             commentSeries: inCommentSeries.
-			inCommentSeries := needCommaAndCommentSeries second ]
+				                             commentSeries: commentSeries.
+			commentSeries := needCommaAndCommentSeries second ]
 		separatedBy: [
 			needCommaAndCommentSeries first
 				ifFalse: [ stream nextPutAll: ' ' ]
@@ -387,15 +371,14 @@ CSlangPrettyPrinter >> visitFunctionDefinition: aFunction [
 		aFunction declarator acceptVisitor: self ].
 	stream cr.
 	aFunction body acceptVisitor: self.
+	stream cr.
 ]
 
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 
 	stream nextPutAll: 'goto ';
-			 nextPutAll: aGoToStatement label name;
-			 nextPut: $;;
-			 cr.
+			 nextPutAll: aGoToStatement label name
 	
 ]
 
@@ -413,13 +396,13 @@ CSlangPrettyPrinter >> visitIfStatement: anIf [
 	stream nextPutAll: ') '.
 	anIf then isCompoundStatement ifFalse: [ stream crtab: level + 1 ].
 	anIf then acceptVisitor: self.
-	anIf then isExpression ifTrue: [ stream nextPut: $; ].
+	anIf then needsTrailingSemicolon ifTrue: [ stream nextPut: $; ].
 	anIf else ifNotNil: [ :e | 
 		anIf then isCompoundStatement ifFalse: [ stream crtab: level ].
 		stream nextPutAll: ' else '.
 		anIf else isCompoundStatement ifFalse: [ stream crtab: level + 1 ].
 		e acceptVisitor: self.
-		anIf else isExpression ifTrue: [ stream nextPut: $; ]]
+		anIf else needsTrailingSemicolon ifTrue: [ stream nextPut: $; ]]
 ]
 
 { #category : 'generated' }
@@ -476,21 +459,11 @@ CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 	stream crtab: level.
 
 	aLabeledStatement statement acceptVisitor: self.
-	"If this statement labels an expression OR we are at the end of a compound
-	 statement labeling an empty statement then we need to add the closing
-	 semicolon"
-	(aLabeledStatement statement isExpression
-		or: [ aLabeledStatement statement isEmpty
-				and: [ aLabeledStatement case isNil
-				and: [ aLabeledStatement parent isNotNil
-				and: [ aLabeledStatement parent isCompoundStatement
-				and: [ | statements lastNonCommentIdx |
-					statements := aLabeledStatement parent statements.
-					lastNonCommentIdx := statements findLast: [ :e | e isComment not ].
-					(statements at: lastNonCommentIdx) = aLabeledStatement ] ] ] ] ])
-		ifTrue: [
-			stream nextPutAll: ';'.
-			stream cr ]
+
+	"Close the statement here to keep compatibility with slang"
+	((aLabeledStatement case notNil or: [ aLabeledStatement label notNil ]) 
+		 and: [ aLabeledStatement statement needsSeparator ]) ifTrue: [ 
+		stream nextPutAll: ';' ]
 ]
 
 { #category : 'generated' }
@@ -547,11 +520,10 @@ CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 	anIf if acceptVisitor: self.
 	stream crtab: level.
 	anIf then acceptVisitor: self.
-	anIf then isExpression
-		ifTrue: [ stream cr. ].
 	
 	anIf else ifNotNil: [ :e | 
 		stream
+			cr;
 			nextPut: $#;
 			next: tabbing * 2 put: Character space;
 			nextPutAll: 'else /* '.
@@ -559,19 +531,16 @@ CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 		stream
 			nextPutAll: ' */';
 			crtab: level.
-		e acceptVisitor: self.
-		e isExpression
-			ifTrue: [ stream cr. ] ].
+		e acceptVisitor: self ].
 	stream
+		cr;
 		nextPut: $#;
 		next: tabbing * 2 put: Character space;
 		nextPutAll: 'endif /* '.
 	anIf if acceptVisitor: self.
 	stream
 		nextPutAll: ' */'.
-	anIf isArgument
-		ifTrue: [ stream crtab: level ]
-		ifFalse: [ stream cr ].
+	anIf isArgument ifTrue: [ stream crtab: level ].
 	level := previousLevel.
 ]
 
@@ -587,9 +556,7 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 	stream nextPutAll: 'return'.
 	aReturn expression ifNotNil: [ :exp |
 		stream space.
-		exp acceptVisitor: self ].
-	stream nextPut: $;.
-	stream cr
+		exp acceptVisitor: self ]
 ]
 
 { #category : 'generated' }

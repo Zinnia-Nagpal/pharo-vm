@@ -12,7 +12,7 @@ AMD64 Architecture Programmer's Manual Volume 5: 64-bit Media and x87 Floating P
 "
 Class {
 	#name : 'CogX64Compiler',
-	#superclass : 'CogX86Compiler',
+	#superclass : 'CogAbstractInstruction',
 	#classVars : [
 		'CDQ',
 		'CLD',
@@ -431,13 +431,6 @@ CogX64Compiler >> canZeroExtend [
 	"x64 has native ZeroExtend8RR, ZeroExtend16RR, & ZeroExtend32RR."
 	<inline: true>
 	^true
-]
-
-{ #category : 'testing' }
-CogX64Compiler >> checkIs32bit: offset [
-
-	(offset between: -2147483648 and: 2147483647) ifFalse: [
-		self error: 'Cannot jump to distances larger than 32 bits' ]
 ]
 
 { #category : 'accessing' }
@@ -1533,10 +1526,7 @@ CogX64Compiler >> concretizeJump [
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	
-	offset := jumpTarget signedIntFromLong64 - (address + 2) signedIntFromLong64.
-	self checkIs32bit: offset.
-
+	offset := jumpTarget signedIntFromLong - (address + 2) signedIntFromLong.
 	(machineCodeSize = 0 "size not determined because no sizeJump pass; generating initial trampolines"
 		ifTrue: [self isQuick: offset]
 		ifFalse: [machineCodeSize = 2]) ifTrue:
@@ -1544,10 +1534,7 @@ CogX64Compiler >> concretizeJump [
 			at: 0 put: 16rEB;
 			at: 1 put: (offset bitAnd: 16rFF).
 		 ^machineCodeSize := 2].
-	
-	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	self checkIs32bit: offset.
-
+	offset := jumpTarget signedIntFromLong - (address + 5) signedIntFromLong.
 	machineCode
 		at: 0 put: 16rE9;
 		at: 1 put: (offset bitAnd: 16rFF);
@@ -1595,10 +1582,7 @@ CogX64Compiler >> concretizeJumpLong [
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	
-	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	self checkIs32bit: offset.
-	
+	offset := jumpTarget signedIntFromLong - (address + 5) signedIntFromLong.
 	machineCode
 		at: 0 put: 16rE9;
 		at: 1 put: (offset bitAnd: 16rFF);
@@ -3603,24 +3587,21 @@ CogX64Compiler >> dispatchConcretizeProcessorSpecific [
 { #category : 'concretize' }
 CogX64Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
+	| fillLoop |
 	
-	self cppIf: FEATURE_JIT_SIMD
-		ifTrue: [  | fillLoop |
-			cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
-			cogit AddCq: 8 R: startMemoryAddr.
-			
-			cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: startMemoryAddr.	
-			
-			cogit DupS: 64 R: fillReg Vr: vectorRegister.
-			"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
-			This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
-			using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
-			the end of the Eden space, as after it we reserve additional headroom."
-			fillLoop := cogit AlignedSt1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
-			cogit CmpR: startMemoryAddr R: endMemoryAddr.
-			cogit JumpAbove: fillLoop.
-		] ifFalse: [ 
-			super fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister ].
+	cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
+	cogit AddCq: 8 R: startMemoryAddr.
+	
+	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: startMemoryAddr.	
+	
+	cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+	the end of the Eden space, as after it we reserve additional headroom."
+	fillLoop := cogit AlignedSt1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
 	
 	^0 "Necessary to keep Slang happy"
 ]
@@ -3990,24 +3971,24 @@ CogX64Compiler >> genMemCopy: originalSourceReg to: originalDestReg size: origin
 ]
 
 { #category : 'abstract instructions' }
-CogX64Compiler >> genMoveCf32: constantFloat32 Rs: reg [
+CogX64Compiler >> genMoveCf32: constantFloat32 Rs: register [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat32 type: #float>
 	| inst |
 	inst := cogit PushCw: constantFloat32 asIEEE32BitWord.
-	cogit PopRs: reg.
+	cogit PopRs: register.
 	^ inst
 ]
 
 { #category : 'abstract instructions' }
-CogX64Compiler >> genMoveCf64: constantFloat64 Rd: reg [
+CogX64Compiler >> genMoveCf64: constantFloat64 Rd: register [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat64 type: #double>
 	| inst |
 	inst := cogit PushCw: constantFloat64 asIEEE64BitWord.
-	cogit PopRd: reg.
+	cogit PopRd: register.
 	^ inst
 ]
 
@@ -4050,6 +4031,54 @@ CogX64Compiler >> genPushRd: reg [
 	inst := cogit MoveRd: reg M64: -8 r: SPReg.
 	cogit SubCq: 8 R: SPReg.
 	^ inst
+]
+
+{ #category : 'smalltalk calling convention' }
+CogX64Compiler >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
+	"Ensure that the register args are pushed before the outer and
+	 inner retpcs at an entry miss for arity <= self numRegArgs.  The
+	 outer retpc is that of a call at a send site.  The inner is the call
+	 from a method or PIC abort/miss to the trampoline."
+
+	"This won't be as clumsy on a RISC.  But putting the receiver and
+	 args above the return address means the CoInterpreter has a
+	 single machine-code frame format which saves us a lot of work."
+
+	"Iff there are register args convert
+		base	->	outerRetpc		(send site retpc)
+		sp		->	innerRetpc		(PIC abort/miss retpc)
+	 to
+		base	->	receiver
+					(arg0)
+					(arg1)
+					outerRetpc
+		sp		->	innerRetpc		(PIC abort/miss retpc)"
+	numArgs <= cogit numRegArgs ifTrue:
+		[self assert: cogit numRegArgs <= 2.
+		 numArgs = 0 ifTrue:
+			[cogit MoveMw: 0 r: SPReg R: TempReg.
+			 cogit PushR: TempReg.
+			 cogit MoveMw: objectMemory wordSize * 2 r: SPReg R: TempReg.
+			 cogit MoveR: TempReg Mw: objectMemory wordSize r: SPReg.
+			 cogit MoveR: ReceiverResultReg Mw: 2 * objectMemory wordSize r: SPReg.
+			 ^self].
+		 numArgs = 1 ifTrue:
+			[cogit MoveMw: objectMemory wordSize r: SPReg R: TempReg.
+			 cogit PushR: TempReg.
+			 cogit MoveMw: objectMemory wordSize r: SPReg R: TempReg.
+			 cogit PushR: TempReg.
+			 cogit MoveR: ReceiverResultReg Mw: 3 * objectMemory wordSize r: SPReg.
+			 cogit MoveR: Arg0Reg Mw: 2 * objectMemory wordSize r: SPReg.
+			 ^self].
+		 numArgs = 2 ifTrue:
+			[cogit PushR: Arg1Reg.
+			 cogit MoveMw: objectMemory wordSize * 2 r: SPReg R: TempReg.
+			 cogit PushR: TempReg.
+			 cogit MoveMw: objectMemory wordSize * 2 r: SPReg R: TempReg.
+			 cogit PushR: TempReg.
+			 cogit MoveR: ReceiverResultReg Mw: 4 * objectMemory wordSize r: SPReg.
+			 cogit MoveR: Arg0Reg Mw: 3 * objectMemory wordSize r: SPReg.
+			 ^self]]
 ]
 
 { #category : 'smalltalk calling convention' }
@@ -4542,6 +4571,22 @@ CogX64Compiler >> returnFromCallCFunctionInSmalltalkStack: anInteger [
 ]
 
 { #category : 'inline cacheing' }
+CogX64Compiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
+	"Rewrite the short jump instruction to jump to a new cpic case target. "
+	<var: #addressFollowingJump type: #usqInt>
+	<var: #jumpTargetAddr type: #usqInt>
+	<var: #callDistance type: #sqInt> "prevent type inference for avoiding warning on abs"
+	| callDistance |
+	callDistance := jumpTargetAddr - addressFollowingJump.
+	self assert: callDistance abs < 128.
+	objectMemory
+		byteAt: addressFollowingJump - 1
+		put:  (callDistance bitAnd: 16rFF).
+	"self cCode: ''
+		inSmalltalk: [cogit disassembleFrom: addressFollowingJump - 10 to: addressFollowingJump - 1]."
+]
+
+{ #category : 'inline cacheing' }
 CogX64Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al, and to rewrite cached primitive calls.   Answer the extent of
@@ -4592,8 +4637,12 @@ CogX64Compiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag targ
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
 	| callDistance |
-	callTargetAddress >= cogit minCallAddress
-		ifFalse: [ self error: 'linking callsite to invalid address' ].
+	"self cCode: ''
+		inSmalltalk: [cogit disassembleFrom: callSiteReturnAddress - 12 to: callSiteReturnAddress - 1]."
+	false
+		ifTrue: [self assert: callTargetAddress >= cogit minCallAddress]
+		ifFalse: [callTargetAddress >= cogit minCallAddress ifFalse:
+					[self error: 'linking callsite to invalid address']].
 	callDistance := (callTargetAddress - callSiteReturnAddress) signedIntToLong.
 	objectMemory
 		byteAt: callSiteReturnAddress - 1 put: (callDistance >> 24 bitAnd: 16rFF);
@@ -4634,23 +4683,6 @@ CogX64Compiler >> rewriteJumpLongAt: addressFollowingJump target: jumpTargetAddr
 	 code change which is used to compute the range of the icache to flush."
 	<inline: true>
 	^self rewriteCallAt: addressFollowingJump target: jumpTargetAddr
-]
-
-{ #category : 'inline cacheing' }
-CogX64Compiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr [
-	"Rewrite the short jump instruction to jump to a new PIC case target. "
-	
-	<var: #addressFollowingJump type: #usqInt>
-	<var: #jumpTargetAddr type: #usqInt>
-	<var: #callDistance type: #sqInt> "prevent type inference for avoiding warning on abs"
-	| callDistance |
-	callDistance := jumpTargetAddr - addressFollowingJump.
-	self assert: callDistance abs < 128.
-	objectMemory
-		byteAt: addressFollowingJump - 1
-		put:  (callDistance bitAnd: 16rFF).
-	"self cCode: ''
-		inSmalltalk: [cogit disassembleFrom: addressFollowingJump - 10 to: addressFollowingJump - 1]."
 ]
 
 { #category : 'encoding' }
@@ -4754,31 +4786,26 @@ CogX64Compiler >> stop [
 
 { #category : 'generate machine code' }
 CogX64Compiler >> stopsFrom: startAddr to: endAddr [
-
 	self
-		cCode: [
-			self cCall: 'memset' withArguments: {
-					startAddr.
-					self stop.
-					(endAddr - startAddr + 1) } ]
-		inSmalltalk: [
-			| alignedEnd alignedStart stops |
+		cCode: [self me: startAddr ms: self stop et: endAddr - startAddr + 1]
+		inSmalltalk:
+			[| alignedEnd alignedStart stops |
 			stops := self stop << 8 + self stop.
 			stops := stops << 16 + stops.
 			stops := stops << 32 + stops.
 			alignedStart := startAddr + 7 // 8 * 8.
 			alignedEnd := endAddr - 1 // 8 * 8.
 			alignedEnd <= startAddr
-				ifTrue: [
-					startAddr to: endAddr do: [ :addr |
-					objectMemory byteAt: addr put: self stop ] ]
-				ifFalse: [
-					startAddr to: alignedStart - 1 do: [ :addr |
-					objectMemory byteAt: addr put: self stop ].
-					alignedStart to: alignedEnd by: 8 do: [ :addr |
-					objectMemory long64At: addr put: stops ].
-					alignedEnd + 8 to: endAddr do: [ :addr |
-					objectMemory byteAt: addr put: self stop ] ] ]
+				ifTrue:
+					[startAddr to: endAddr do:
+						[:addr | objectMemory byteAt: addr put: self stop]]
+				ifFalse:
+					[startAddr to: alignedStart - 1 do:
+						[:addr | objectMemory byteAt: addr put: self stop].
+					 alignedStart to: alignedEnd by: 8 do:
+						[:addr | objectMemory long64At: addr put: stops].
+					 alignedEnd + 8 to: endAddr do:
+						[:addr | objectMemory byteAt: addr put: self stop]]]
 ]
 
 { #category : 'inline cacheing' }

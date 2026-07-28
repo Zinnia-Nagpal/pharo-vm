@@ -36,6 +36,22 @@ InterpreterProxy class >> renameSelectorIfStaticallyResolved: aString [
 	^ aString
 ]
 
+{ #category : 'private' }
+InterpreterProxy class >> validateProxyImplementation: anInterpreter [ 
+	"InterpreterProxy validateProxyImplementation: Interpreter"
+
+	| proxyClass catList |
+	proxyClass := InterpreterProxy.
+	catList := proxyClass organization categories copy asOrderedCollection.
+	catList remove: 'initialize' ifAbsent:[].
+	catList remove: 'private' ifAbsent:[].
+	catList do:[:categ|
+		(proxyClass organization listAtCategoryNamed: categ) do:[:selector|
+			(anInterpreter canUnderstand: selector) 
+				ifFalse:
+					[self notifyWithLabel: selector, ' is not implemented in ', anInterpreter name]]]
+]
+
 { #category : 'object access' }
 InterpreterProxy >> argumentCountOf: methodPointer [
 	^methodPointer numArgs
@@ -213,6 +229,11 @@ InterpreterProxy >> copyBitsFrom: leftX to: rightX at: yValue [
 	bb copyBitsFrom: leftX to: rightX at: yValue.
 ]
 
+{ #category : 'special objects' }
+InterpreterProxy >> displayObject [
+	^Display
+]
+
 { #category : 'other' }
 InterpreterProxy >> failed [
 
@@ -295,6 +316,18 @@ InterpreterProxy >> firstIndexableField: oop [
 	^CArrayAccessor on: oop
 ]
 
+{ #category : 'stack access' }
+InterpreterProxy >> floatArg: offset [
+	"Like #stackFloatValue: but access method arguments left-to-right"
+	"Obsolete; was never used; replaced with methodReturnString: in the VirtualMachine struct."
+	| oop |
+	<returnTypeC: #double>
+	self deprecated.
+	oop := self methodArg: offset.
+	(self isFloatObject: oop) ifFalse: [self primitiveFail. ^0.0].
+	^oop
+]
+
 { #category : 'converting' }
 InterpreterProxy >> floatObjectOf: aFloat [
 	<returnTypeC: #sqInt> "...because answering the float argument causes the type inferencer to say this answers a float."
@@ -362,6 +395,17 @@ InterpreterProxy >> instantiateClass: classPointer indexableSize: size [
 	^size = 0 
 		ifTrue:[classPointer basicNew]
 		ifFalse:[classPointer basicNew: size]
+]
+
+{ #category : 'stack access' }
+InterpreterProxy >> integerArg: offset [
+	"Like #stackIntegerValue: but access method arguments left-to-right"
+	"Obsolete; was never used; replaced with methodReturnInteger: in the VirtualMachine struct."
+	| oop |
+	self deprecated.
+	oop := self methodArg: offset.
+	(self isIntegerObject: oop) ifFalse: [self primitiveFail. ^0].
+	^oop
 ]
 
 { #category : 'converting' }
@@ -568,7 +612,7 @@ InterpreterProxy >> isPointers: oop [
 { #category : 'testing' }
 InterpreterProxy >> isPositiveMachineIntegerObject: oop [
 	<option: #(atLeastVMProxyMajor:minor: 1 15)>
-	^oop isInteger and: [oop >= 0 and: [(oop numberOfDigitsInBase: 2) <= Smalltalk wordSize]]
+	^oop isInteger and: [oop >= 0 and: [oop digitLength <= Smalltalk wordSize]]
 ]
 
 { #category : 'testing' }
@@ -644,6 +688,15 @@ InterpreterProxy >> makePointwithxValue: xValue yValue: yValue [
 	^xValue@yValue
 ]
 
+{ #category : 'stack access' }
+InterpreterProxy >> methodArg: offset [
+	"Like #stackValue: but access method arguments left-to-right"
+	"Obsolete; was never used; replaced with methodReturnBool: in the VirtualMachine struct."
+	self deprecated.
+	offset > argumentCount + 1 ifTrue:[^self primitiveFail].
+	^self stackValue: argumentCount - offset
+]
+
 { #category : 'object access' }
 InterpreterProxy >> methodArgumentCount [
 	^argumentCount
@@ -714,6 +767,17 @@ InterpreterProxy >> nilObject [
 { #category : 'private' }
 InterpreterProxy >> notYetImplementedError [
 	^self error: 'not yet implemented in Smalltalk'
+]
+
+{ #category : 'stack access' }
+InterpreterProxy >> objectArg: offset [
+	"Like #stackObjectValue: but access method arguments left-to-right"
+	"Obsolete; was never used; replaced with methodReturnFloat: in the VirtualMachine struct."
+	| oop |
+	self deprecated.
+	oop := self methodArg: offset.
+	(self isImmediate: oop) ifTrue: [self primitiveFail. ^ nil].
+	^oop
 ]
 
 { #category : 'object access' }
@@ -955,6 +1019,13 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	self notYetImplemented
 ]
 
+{ #category : 'other' }
+InterpreterProxy >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
+	aForm == Display ifTrue:[
+		Display class isDeferringUpdates ifTrue: [^ nil].
+		Display forceToScreen: (Rectangle left: l right: r top: t bottom: b)].
+]
+
 { #category : 'callback support' }
 InterpreterProxy >> signalNoResume: aSemaphore [
 	^self notYetImplementedError
@@ -1077,7 +1148,7 @@ InterpreterProxy >> stackValue: offset [
 { #category : 'other' }
 InterpreterProxy >> statNumGCs [
 	<option: #(atLeastVMProxyMajor:minor: 1 14)>
-	^(Smalltalk vm parameterAt: 7 "statFullGCs") + (Smalltalk vm parameterAt: 9 "statScavenges/statIncrGCs")
+	^(Smalltalk vmParameterAt: 7 "statFullGCs") + (Smalltalk vmParameterAt: 9 "statScavenges/statIncrGCs")
 ]
 
 { #category : 'object access' }
@@ -1119,6 +1190,12 @@ InterpreterProxy >> synthesizeStackFor: receiver with: args [
 	self push: receiver.
 	argumentCount := args size.
 	1 to: argumentCount do: [:i | self push: (args at: i)].
+]
+
+{ #category : 'other' }
+InterpreterProxy >> tenuringIncrementalGC [
+	<returnTypeC: #void>
+	Smalltalk forceTenuring; garbageCollectMost
 ]
 
 { #category : 'instance creation' }

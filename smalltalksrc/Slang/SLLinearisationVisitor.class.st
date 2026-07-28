@@ -182,11 +182,10 @@ SLLinearisationVisitor >> visitSendNode: aTSendNode [
 		newSelector := #ifFalse: ].
 
 	aTSendNode receiver accept: self.
-	receiverVar := (shouldLinearise
-		or: [ aTSendNode isConditionalSend
-			and: [ aTSendNode receiver isConditionalSend ] ])
-				ifTrue: [ builder popAsStatement ]
-				ifFalse: [ builder popAsExpression ].
+	receiverVar := shouldLinearise
+		               ifTrue: [ builder popAsStatement ]
+		               ifFalse: [ builder popAsExpression ].
+
 	argVars := aTSendNode arguments collect: [ :arg | 
 		           arg accept: self.
 		           (aTSendNode isConditionalSend or: [ shouldLinearise ])

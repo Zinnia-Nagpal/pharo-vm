@@ -106,11 +106,6 @@ Object >> isCObjectAccessor [
 	^ false
 ]
 
-{ #category : '*VMMaker-Simulation-testing' }
-Object >> isCompiledCode [
-	^false
-]
-
 { #category : '*VMMaker-translation support' }
 Object >> isInterpreterPlugin [
 	^false

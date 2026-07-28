@@ -4,6 +4,9 @@ Implements the asynchronous file primitives available on a few platforms. See th
 Class {
 	#name : 'AsynchFilePlugin',
 	#superclass : 'SmartSyntaxInterpreterPlugin',
+	#instVars : [
+		'sCOAFfn'
+	],
 	#category : 'VMMaker-Plugins',
 	#package : 'VMMaker',
 	#tag : 'Plugins'
@@ -29,34 +32,6 @@ AsynchFilePlugin class >> requiresPlatformFiles [
 ]
 
 { #category : 'primitives' }
-AsynchFilePlugin >> async: f File: fPosition Write: bufferPtr Start: count [
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
-{ #category : 'primitives' }
-AsynchFilePlugin >> asyncFile: f Read: bufferPtr Result: count [
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
-{ #category : 'primitives' }
-AsynchFilePlugin >> asyncFile: f Read: fPosition Start: count [
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
-{ #category : 'primitives' }
-AsynchFilePlugin >> asyncFileClose: f [
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
-{ #category : 'primitives' }
 AsynchFilePlugin >> asyncFileValueOf: oop [
 	"Answer a pointer to the first byte of the async file record within the given
 	 Smalltalk bytes object, or fail and answer nil if oop is not an async file record."
@@ -69,19 +44,23 @@ AsynchFilePlugin >> asyncFileValueOf: oop [
 	^nil
 ]
 
-{ #category : 'primitives' }
-AsynchFilePlugin >> asyncFileWriteResult: f [
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
 { #category : 'initialize-release' }
 AsynchFilePlugin >> initialiseModule [
 	"Initialise the module"
-
 	<export: true>
-	^ self cCode: 'asyncFileInit()' inSmalltalk: [ true ]
+	sCOAFfn := interpreterProxy ioLoadFunction: 'secCanOpenAsyncFileOfSizeWritable' From: 'SecurityPlugin'.
+	^self cCode: 'asyncFileInit()' inSmalltalk:[true]
+]
+
+{ #category : 'initialize-release' }
+AsynchFilePlugin >> moduleUnloaded: aModuleName [ 
+	"The module with the given name was just unloaded. 
+	Make sure we have no dangling references."
+	<export: true>
+	<var: #aModuleName type: 'char *'>
+	(aModuleName strcmp: 'SecurityPlugin') = 0
+		ifTrue: ["The security plugin just shut down. How odd. Zero the function pointer we have into it"
+			sCOAFfn := 0]
 ]
 
 { #category : 'primitives' }
@@ -96,12 +75,17 @@ AsynchFilePlugin >> primitiveAsyncFileClose: fh [
 
 { #category : 'primitives' }
 AsynchFilePlugin >> primitiveAsyncFileOpen: fileName forWrite: writeFlag semaIndex: semaIndex [ 
-	| fileNameSize fOop f |
+	| fileNameSize fOop f okToOpen |
 	<var: #f type: 'AsyncFile *'>
 	self primitive: 'primitiveAsyncFileOpen' parameters: #(#String #Boolean #SmallInteger ).
 	fileNameSize := interpreterProxy byteSizeOf: (fileName asOop: String).
 	"If the security plugin can be loaded, use it to check for permission.
 	If not, assume it's ok"
+	sCOAFfn ~= 0 ifTrue:
+		[okToOpen := self cCode: '((sqInt (*) (char *, sqInt, sqInt)) sCOAFfn)(fileName, fileNameSize, writeFlag)'
+							inSmalltalk: [true].
+		 okToOpen ifFalse:
+			[^interpreterProxy primitiveFail]].
 	fOop := interpreterProxy
 				instantiateClass: interpreterProxy classByteArray
 				indexableSize: (self sizeof: #AsyncFile).

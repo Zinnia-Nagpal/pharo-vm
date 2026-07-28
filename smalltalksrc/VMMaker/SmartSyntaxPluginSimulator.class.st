@@ -62,6 +62,13 @@ SmartSyntaxPluginSimulator >> ccgLoad: forProlog expr: failBlock asIntegerValueF
 ]
 
 { #category : 'simulation' }
+SmartSyntaxPluginSimulator >> ccgLoad: forProlog expr: failBlock asKindOf: aClass from: argIndexOrNil [ 
+	^[:oop|
+	   interpreterProxy success: (interpreterProxy is: oop KindOf: aClass name asString).
+	   oop]
+]
+
+{ #category : 'simulation' }
 SmartSyntaxPluginSimulator >> ccgLoad: forProlog expr: failBlock asKindOfIntegerFrom: argIndexOrNil [ 
 	^[:oop|
 	   interpreterProxy success: (interpreterProxy isKindOfInteger: oop).

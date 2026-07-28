@@ -23,8 +23,8 @@ TInlineNode >> asCASTIn: aBuilder [
 
 { #category : 'transformations' }
 TInlineNode >> bindVariableUsesIn: aDictionary [
+	method := method bindVariableUsesIn: aDictionary.
 
-	self method: (method bindVariableUsesIn: aDictionary)
 ]
 
 { #category : 'transformations' }
@@ -42,15 +42,16 @@ TInlineNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 { #category : 'transformations' }
 TInlineNode >> bindVariablesIn: aDictionary [
 
-	self method: (method bindVariablesIn: aDictionary)
+	method := method bindVariablesIn: aDictionary.
+
 ]
 
 { #category : 'transformations' }
 TInlineNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
-	(cautionaryBlock value: self) ifTrue: [ ^ self ].
-	self method:
-		(method bindVariablesIn: aDictionary unless: cautionaryBlock)
+	(cautionaryBlock value: self) ifTrue: [^self].
+	method := method bindVariablesIn: aDictionary unless: cautionaryBlock.
+
 ]
 
 { #category : 'accessing' }
@@ -79,9 +80,7 @@ TInlineNode >> method [
 
 { #category : 'accessing' }
 TInlineNode >> method: aTMethod [
-	method := aTMethod.
-	
-	aTMethod parseTree parent: self
+	method := aTMethod
 ]
 
 { #category : 'enumerating' }
@@ -119,7 +118,7 @@ TInlineNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : 'copying' }
 TInlineNode >> postCopy [
 
-	self method: method copy
+	method := method copy
 ]
 
 { #category : 'printing' }
@@ -128,25 +127,10 @@ TInlineNode >> printOn: aStream level: anInteger [
 ]
 
 { #category : 'transformations' }
-TInlineNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
-
-	method := method
-		          renameLocalVariablesGivenClassVariables: classVariables
-		          globalVariables: globalsVariables
-		          classNames: classNames
-		          inCodeGenerator: aCodeGen
-		          collectingChangesIn: changedVariables
-]
-
-{ #category : 'transformations' }
-TInlineNode >> replaceNodesIn: aDictionary [
-
-	| aDictionaryAtSelf |
-	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
-	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
-
-	self method: (method replaceNodesIn: aDictionary).
-	^ self
+TInlineNode >> replaceNodesIn: map [
+	^map at: self ifAbsent: [
+		method replaceNodesIn: map.
+		self]
 ]
 
 { #category : 'inlining' }

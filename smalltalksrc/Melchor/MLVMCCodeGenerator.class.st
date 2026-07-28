@@ -140,11 +140,9 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 
 	self pruneUnreachableMethods.
 	interpretMethod := self methodNamed: #interpret.
-	interpretMethod ifNotNil: [ 
-		self
-			localizeVariables: self vmClass namesOfVariablesToLocalize
-			inMethod: interpretMethod ]
-	
+	self
+		localizeVariables: self vmClass namesOfVariablesToLocalize
+		inMethod: interpretMethod
 ]
 
 { #category : 'C code generator' }
@@ -212,7 +210,7 @@ MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: va
 					(declaration beginsWith: 'static') ifFalse: [ 
 						aStream nextPutAll: 'static ' ] ] ]
 		ifFalse: [ 
-			(self vmClass mustBeGlobalAndExport: varString)
+			(self vmClass mustBeGlobal: varString)
 				ifTrue: [ 
 					(declaration beginsWith: 'static ') ifTrue: [ 
 						declaration := declaration allButFirst: 7 ] ]
@@ -276,7 +274,7 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 
 	aStream newLine; nextPutAll: '/*** Global Variables ***/'; newLine.
 	
-	(self sortStrings: (variables select: [:v| self vmClass mustBeGlobalAndExport: v])) do:
+	(self sortStrings: (variables select: [:v| self vmClass mustBeGlobal: v])) do:
 		[:var | | varString decl |
 		varString := var asString.
 		decl := variableDeclarations at: varString ifAbsent: ['sqInt ' , varString].
@@ -362,39 +360,16 @@ MLVMCCodeGenerator >> isAcceptableAncilliaryClass: class [
 { #category : 'C code generator' }
 MLVMCCodeGenerator >> isNonArgumentImplicitReceiverVariableName: aString [
 
-	^ (super isNonArgumentImplicitReceiverVariableName: aString) or: [
-		  self vmClass
-			  ifNil: [ #( 'interpreterProxy' 'self' ) includes: aString ]
-			  ifNotNil: [
-			  self vmClass isNonArgumentImplicitReceiverVariableName: aString ] ]
+	^ (super isNonArgumentImplicitReceiverVariableName: aString)
+	    or: [self vmClass
+			ifNil: [#('interpreterProxy' 'self') includes: aString]
+	 		ifNotNil: [self vmClass isNonArgumentImplicitReceiverVariableName: aString]]
 ]
 
 { #category : 'C code generator' }
 MLVMCCodeGenerator >> kernelReturnTypes [
 	
 	^ kernelReturnTypes ifNil: [ kernelReturnTypes := self computeKernelReturnTypes ]
-]
-
-{ #category : 'utilities' }
-MLVMCCodeGenerator >> localizeGlobalVariables [
-	"TPR - remove all the global vars destined for the structure that are only used once, also supress global variables which have 0 usage"
-
-	| globalsToDelete |
-	super localizeGlobalVariables.
-	globalsToDelete := Set new.
-
-	globalVariableUsage associationsDo: [ :assoc |
-		| var |
-		var := assoc key.
-		(assoc value size = 1 and: [
-			 (self mustBeGlobal: var) not and: [
-				 ((variableDeclarations at: var ifAbsent: [ '' ]) beginsWith:
-					  'extern') not ] ]) ifTrue: [ globalsToDelete add: assoc key ] ].
-	variables do: [ :var |
-		((globalVariableUsage keys includes: var) or: [
-			 self mustBeGlobal: var ]) ifFalse: [ globalsToDelete add: var ] ].
-
-	globalsToDelete do: [ :var | self removeVariable: var ]
 ]
 
 { #category : 'C translation support' }
@@ -422,20 +397,7 @@ MLVMCCodeGenerator >> mostBasicConstantSelectors [
 
 { #category : 'inlining' }
 MLVMCCodeGenerator >> mustBeGlobal: aName [
-
-	^ (self mustBeGlobalAndExport: aName) or: [
-		  self mustBeGlobalInFile: aName ]
-]
-
-{ #category : 'inlining' }
-MLVMCCodeGenerator >> mustBeGlobalAndExport: aName [
-	^ self vmClass mustBeGlobalAndExport: aName
-]
-
-{ #category : 'inlining' }
-MLVMCCodeGenerator >> mustBeGlobalInFile: aName [
-
-	^ self vmClass mustBeGlobalInFile: aName
+	^ self vmClass mustBeGlobal: aName
 ]
 
 { #category : 'C code generator' }
@@ -520,6 +482,15 @@ MLVMCCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledM
 MLVMCCodeGenerator >> shouldGenerateAsInterpreterProxySend: aSendNode [
 	^(self messageReceiverIsInterpreterProxy: aSendNode)
 	  and: [(self constantClass mostBasicConstantSelectors includes: aSendNode selector) not]
+]
+
+{ #category : 'C code generator' }
+MLVMCCodeGenerator >> shouldGenerateHeader [
+	^ [ 
+	  ((self class monticelloDescriptionFor: self vmClass) includes: $*)
+		  not ]
+		  on: Error
+		  do: [ :ex | false ]
 ]
 
 { #category : 'C code generator' }

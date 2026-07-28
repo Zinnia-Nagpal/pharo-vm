@@ -6,8 +6,7 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'parent',
-		'comment',
-		'isExpression'
+		'comment'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -264,12 +263,6 @@ TParseNode >> isEmptyOrHasNothingButComments [
 ]
 
 { #category : 'testing' }
-TParseNode >> isExpression [
-
-	^ false
-]
-
-{ #category : 'testing' }
 TParseNode >> isGoTo [
 
 	^false
@@ -302,6 +295,15 @@ TParseNode >> isLiteralArrayDeclaration [
 TParseNode >> isNonNullCCode [
 	"overridden in TSendNode"
 	^false
+]
+
+{ #category : 'testing' }
+TParseNode >> isNotExpression [
+
+	^ parent isNil or: [
+		  parent isTMethod or: [
+			  parent isSend not and: [
+				  parent isReturn not and: [ parent isAssignment not ] ] ] ]
 ]
 
 { #category : 'testing' }
@@ -478,13 +480,6 @@ TParseNode >> removeUnusedNodesInBranch: aChild [
 ]
 
 { #category : 'transformations' }
-TParseNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
-	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound.
-	 But do not change variables that appear on the left-hand-side of an assignment statement."
-	^self
-]
-
-{ #category : 'transformations' }
 TParseNode >> replaceBy: aNode [
 
 	self parent replaceChild: self with: aNode
@@ -499,11 +494,7 @@ TParseNode >> replaceChild: aNode with: aReplacementNode [
 { #category : 'transformations' }
 TParseNode >> replaceNodesIn: aDictionary [
 
-	| aDictionaryAtSelf |
-	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
-	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
-
-	^ self
+	^aDictionary at: self ifAbsent: [self]
 ]
 
 { #category : 'enumerating' }

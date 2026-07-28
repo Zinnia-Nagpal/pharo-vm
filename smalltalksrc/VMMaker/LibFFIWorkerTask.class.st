@@ -37,7 +37,7 @@ LibFFIWorkerTask class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 ]
 
 { #category : 'translation' }
-LibFFIWorkerTask class >> printTypedefOn: aStream withTranslations: ivnTranslations [
+LibFFIWorkerTask class >> printTypedefOn: aStream [
 
 	"This is already defined in workerTask.h"
 ]

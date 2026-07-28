@@ -2254,12 +2254,6 @@ CogARMCompiler >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 ar
 ]
 
 { #category : 'abstract instructions' }
-CogARMCompiler >> genMoveM32: offset r: baseReg R: destReg [
-
-	^ cogit MoveMw: offset r: baseReg R: destReg
-]
-
-{ #category : 'abstract instructions' }
 CogARMCompiler >> genMulR: regSource R: regDest [
 	"Use SMULL to produce a 64-bit result, explicitly in RISCTempReg,regDest. - ARM_ARM v7 DDI10406 pp. A8-354-5
 	 By comparing RISCTempReg with regDest ASR 31(which effectively makes it 0 or -1) we know that the result being EQ means the hi reg and the top bit of the lo reg are the same - ie no overflow. The condition code can then be forced to oVerflow by use of MSR APSR_nzcvq, #1, lsl 28"
@@ -3079,6 +3073,17 @@ CogARMCompiler >> returnFromCallCFunctionInSmalltalkStack: anObject [
 ]
 
 { #category : 'inline cacheing' }
+CogARMCompiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
+	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
+	jumps in the prototype CPIC to suit each use,.   
+	Answer the extent of the code change which is used to compute the range of the icache to flush."
+	<var: #addressFollowingJump type: #usqInt>
+	<var: #jumpTargetAddr type: #usqInt>
+	<inline: true>
+	^self rewriteTransferAt: addressFollowingJump target: jumpTargetAddr
+]
+
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al,.   
@@ -3136,32 +3141,19 @@ CogARMCompiler >> rewriteJumpFullAt: callSiteReturnAddress target: callTargetAdd
 { #category : 'inline cacheing' }
 CogARMCompiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype PIC to suit each use,.   
+	jumps in the prototype CPIC to suit each use,.   
 	Answer the extent of the code change which is used to compute the range of the icache to flush."
-
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
 	^self rewriteTransferAt: callSiteReturnAddress target: callTargetAddress
 ]
 
 { #category : 'inline cacheing' }
-CogARMCompiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr [
-	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype PIC to suit each use,.   
-	Answer the extent of the code change which is used to compute the range of the icache to flush."
-	<var: #addressFollowingJump type: #usqInt>
-	<var: #jumpTargetAddr type: #usqInt>
-	<inline: true>
-	^self rewriteTransferAt: addressFollowingJump target: jumpTargetAddr
-]
-
-{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call/jump instruction to call a different target.  This variant is used to link PICs
-	 in ceSendMiss et al, and to rewrite call/jumps in PICs.
+	 in ceSendMiss et al, and to rewrite call/jumps in CPICs.
 	Answer the extent of
 	 the code change which is used to compute the range of the icache to flush."
-	
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
 	| callDistance instr |

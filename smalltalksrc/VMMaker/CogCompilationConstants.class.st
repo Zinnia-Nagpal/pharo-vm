@@ -4,7 +4,6 @@ Class {
 	#classVars : [
 		'BadRegisterSet',
 		'CogCompilerClass',
-		'FEATURE_JIT_SIMD',
 		'InFullBlock',
 		'NumSendTrampolines',
 		'SSBaseOffset',

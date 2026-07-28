@@ -1,26 +1,14 @@
 Class {
 	#name : 'ExtraVMClass',
 	#superclass : 'VMClass',
-	#category : 'VMMaker-Core',
-	#package : 'VMMaker',
-	#tag : 'Core'
+	#category : 'VMMaker',
+	#package : 'VMMaker'
 }
 
-{ #category : 'translation' }
-ExtraVMClass class >> apiExportHeaderName [
-
-	^ 'extra.h'
-]
-
-{ #category : 'translation' }
-ExtraVMClass class >> sourceFileName [
-
-	^ 'extra.c'
+{ #category : 'as yet unclassified' }
+ExtraVMClass class >> sourceFileName [ ^ #extra.c
 ]
 
 { #category : 'accessing - structure variables' }
-ExtraVMClass >> f [
-
-	<api>
-	^ 42
+ExtraVMClass >> f [ <api> ^5
 ]
