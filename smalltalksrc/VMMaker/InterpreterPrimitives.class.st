@@ -665,7 +665,9 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 
 { #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
-
+   | result |
+	result := ExtraVMClass new f.
+	self cCode: 'printf("f() returned %d\n", result)'.
 	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
 ]
 
