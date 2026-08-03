@@ -261,18 +261,10 @@ VMMaker >> availablePlugins [
 VMMaker >> buildCodeGeneratorForCogit [
 	"Answer the code generator for translating the cogit."
 
-	^(Smalltalk classNamed: #CurrentReadOnlySourceFiles)
-		ifNil: [self
-				buildCodeGeneratorForCogit: self interpreterClass cogitClass
-				includeAPIMethods: true
-				initializeClasses: true]
-		ifNotNil:
-			[:crosf|
-			 crosf cacheDuring:
-				[self
-					buildCodeGeneratorForCogit: self interpreterClass cogitClass
-					includeAPIMethods: true
-					initializeClasses: true]]
+	^ self
+		  buildCodeGeneratorForCogit: self interpreterClass cogitClass
+		  includeAPIMethods: true
+		  initializeClasses: true
 ]
 
 { #category : 'generate sources' }
@@ -283,62 +275,60 @@ VMMaker >> buildCodeGeneratorForCogit: cogitClass includeAPIMethods: getAPIMetho
 	cg := self createCogitCodeGenerator.
 
 	cg vmClass: cogitClass.
-	initializeClasses ifTrue:
-		[{ cogitClass. self interpreterClass. self interpreterClass objectMemoryClass } do:
-			[:cgc|
-			(cgc respondsTo: #initializeWithOptions:)
-				ifTrue: [cgc initializeWithOptions: optionsDictionary]
-				ifFalse: [cgc initialize]]].
+	initializeClasses ifTrue: [
+		{
+			cogitClass.
+			self interpreterClass.
+			self interpreterClass objectMemoryClass } do: [ :cgc |
+			cgc initializeWithOptions: optionsDictionary ] ].
 
-	cogitClasses := OrderedCollection withAll: (cogitClass withAllSuperclasses copyUpThrough: SlangClass) reverse.
-	cogitClasses addAllLast: (cogitClass ancilliaryClasses reject: [:class| class isStructClass]).
-	cogitClasses do: [:cgc| cg addClass: cgc].
+	cogitClasses := OrderedCollection withAll:
+		                (cogitClass withAllSuperclasses copyUpThrough:
+			                 SlangClass) reverse.
+	cogitClasses addAllLast:
+		(cogitClass ancilliaryClasses reject: [ :class |
+			 class isStructClass ]).
+	cogitClasses do: [ :cgc | cg addClass: cgc ].
 	"Now make sure to add struct classes that the most specific subclasses specify.
 	 This makes sure that struct classes are ordered as the most specific cogitClass desires.
 	 This must happen for references between the struct classes to be resolved in a specific order."
-	cogitClasses := OrderedCollection with: cogitClass with: cogitClass objectRepresentationClass.
-	cogitClasses addAll: (cogitClass ancilliaryClasses reject:
-							[:class|
-							 class isStructClass
-							 or: [cogitClass objectRepresentationClass includesBehavior: class]]).
-	cg addStructClasses: (cg structClassesForTranslationClasses: cogitClasses).
+	cogitClasses := OrderedCollection
+		                with: cogitClass
+		                with: cogitClass objectRepresentationClass.
+	cogitClasses addAll:
+		(cogitClass ancilliaryClasses reject: [ :class |
+			 class isStructClass or: [
+				 cogitClass objectRepresentationClass includesBehavior: class ] ]).
+	cg addStructClasses:
+		(cg structClassesForTranslationClasses: cogitClasses).
 
-	getAPIMethods ifTrue:
-		[cg includeAPIFrom: (self
-								buildCodeGeneratorForInterpreter: self interpreterClass
-								includeAPIMethods: false
-								initializeClasses: false)].
+	getAPIMethods ifTrue: [
+		cg includeAPIFrom: (self
+				 buildCodeGeneratorForInterpreter: self interpreterClass
+				 includeAPIMethods: false
+				 initializeClasses: false) ].
 
-	^cg
+	^ cg
 ]
 
 { #category : 'generate sources' }
 VMMaker >> buildCodeGeneratorForInterpreter [
 	"Answer the code generator for translating the interpreter."
 
-	^(Smalltalk classNamed: #CurrentReadOnlySourceFiles)
-		ifNil: [self
-				buildCodeGeneratorForInterpreter: self interpreterClass
-				includeAPIMethods: true
-				initializeClasses: true]
-		ifNotNil:
-			[:crosf|
-			 crosf cacheDuring:
-				[self
-					buildCodeGeneratorForInterpreter: self interpreterClass
-					includeAPIMethods: true
-					initializeClasses: true]]
+	^ self
+		  buildCodeGeneratorForInterpreter: self interpreterClass
+		  includeAPIMethods: true
+		  initializeClasses: true
 ]
 
 { #category : 'generate sources' }
 VMMaker >> buildCodeGeneratorForInterpreter: interpreterClass includeAPIMethods: getAPIMethods initializeClasses: initializeClasses [
-
 	"Answer the code generator for translating the interpreter."
 
 	| cg interpreterClasses |
-	initializeClasses ifTrue: [ 
+	initializeClasses ifTrue: [
 		interpreterClass initializeWithOptions: optionsDictionary.
-		interpreterClass hasCogit ifTrue: [ 
+		interpreterClass hasCogit ifTrue: [
 			interpreterClass cogitClass initializeWithOptions:
 				optionsDictionary ] ].
 
@@ -347,12 +337,12 @@ VMMaker >> buildCodeGeneratorForInterpreter: interpreterClass includeAPIMethods:
 	"Construct interpreterClasses as all classes from interpreterClass &
 	 objectMemoryClass up to VMClass in superclass to subclass order."
 	interpreterClasses := OrderedCollection new.
-	{ 
+	{
 		interpreterClass.
-		interpreterClass objectMemoryClass } do: [ :vmClass | 
+		interpreterClass objectMemoryClass } do: [ :vmClass |
 		| theClass |
 		theClass := vmClass.
-		[ theClass ~~ self vmmakerConfiguration baseClass ] whileTrue: [ 
+		[ theClass ~~ self vmmakerConfiguration baseClass ] whileTrue: [
 			interpreterClasses addFirst: theClass.
 			theClass := theClass superclass ] ].
 	interpreterClasses
@@ -360,13 +350,10 @@ VMMaker >> buildCodeGeneratorForInterpreter: interpreterClass includeAPIMethods:
 		addAllLast:
 			(cg nonStructClassesForTranslationClasses: interpreterClasses).
 
-	initializeClasses ifTrue: [ 
-		interpreterClasses do: [ :ic | 
-			(ic respondsTo: #initializeWithOptions:)
-				ifTrue: [ 
-				ic initializeWithOptions: interpreterClass initializationOptions ]
-				ifFalse: [ ic initialize ] ].
-		(cg structClassesForTranslationClasses: interpreterClasses) do: [ 
+	initializeClasses ifTrue: [
+		interpreterClasses do: [ :ic |
+			ic initializeWithOptions: interpreterClass initializationOptions ].
+		(cg structClassesForTranslationClasses: interpreterClasses) do: [
 			:structClass | structClass initialize ] ].
 
 	cg addStructClasses:
@@ -374,8 +361,8 @@ VMMaker >> buildCodeGeneratorForInterpreter: interpreterClass includeAPIMethods:
 
 	interpreterClasses do: [ :ic | cg addClass: ic ].
 
-	getAPIMethods ifTrue: [ 
-		interpreterClass cogitClass ifNotNil: [ :cogitClass | 
+	getAPIMethods ifTrue: [
+		interpreterClass cogitClass ifNotNil: [ :cogitClass |
 			cg includeAPIFrom: (self
 					 buildCodeGeneratorForCogit: cogitClass
 					 includeAPIMethods: false
@@ -582,6 +569,8 @@ VMMaker >> generateCogitFileFor: cogitClass [
 	cg := self buildCodeGeneratorForCogit.
 
 	cg inferTypes.
+	cg 	prepareMethods.
+
 	self needsToRegenerateCogitFile ifFalse: [^cg].
 
 	cg vmClass preGenerationHook: cg.
@@ -626,7 +615,6 @@ VMMaker >> generateEntire [
 	"Generate the interp, internal plugins and exports as well as the external plugins.
 	 If this comes from a generator method, log it for convenience."
 	abortBlock := [^self].
-	self logGeneration.
 	self generateMainVM.
 	self generateExternalPlugins
 ]
@@ -634,45 +622,71 @@ VMMaker >> generateEntire [
 { #category : 'exports' }
 VMMaker >> generateExportsFile [
 	"Store the exports on the given file"
+
 	| cg contents filePath fileStream |
 	filePath := self interpreterExportsFilePath.
 	"don't bother endlessly regenerating the example file."
-	(internalPlugins isEmpty
-	 and: [(filePath includesSubstring: 'example')
-	 and: [filePath asFileReference exists]]) ifTrue:
-		[^self].
+	(internalPlugins isEmpty and: [
+			 (filePath includesSubstring: 'example') and: [
+				 filePath asFileReference exists ] ]) ifTrue: [ ^ self ].
 	cg := self createCodeGenerator.
 	cg vmClass: self interpreterClass.
-	contents := String streamContents:
-		[:s|
-		s
-			nextPutAll:'/* This is an automatically generated table of all builtin modules in the VM';
-			cr;
-			next: 3 put: Character space;
-			nextPutAll: (cg shortMonticelloDescriptionForClass: cg vmClass);
-			cr;
-			nextPutAll:' */';
-			cr.
-		s cr; nextPutAll:'extern sqExport vm_exports[];'.
-		s cr; nextPutAll: 'extern sqExport os_exports[];'.
-		self internalPluginsDo:[:cls|
-			s cr; nextPutAll: 'extern sqExport '; nextPutAll: cls moduleName; nextPutAll:'_exports[];'.
-		].
-		s cr.
+	contents := String streamContents: [ :s |
+			            s
+				            nextPutAll:
+					            '/* This is an automatically generated table of all builtin modules in the VM';
+				            cr;
+				            nextPutAll: ' */';
+				            cr.
+			            s
+				            cr;
+				            nextPutAll: 'extern sqExport vm_exports[];'.
+			            s
+				            cr;
+				            nextPutAll: 'extern sqExport os_exports[];'.
+			            self internalPluginsDo: [ :cls |
+					            s
+						            cr;
+						            nextPutAll: 'extern sqExport ';
+						            nextPutAll: cls moduleName;
+						            nextPutAll: '_exports[];' ].
+			            s cr.
 
-		s cr; nextPutAll:'sqExport *pluginExports[] = {'.
-		s newLine; tab; nextPutAll:'vm_exports,'.
-		s newLine; tab; nextPutAll: 'os_exports,'.
-		self internalPluginsDo:[:cls|
-			s newLine; tab; nextPutAll: cls moduleName; nextPutAll:'_exports,'
-		].
-		s newLine; tab; nextPutAll:'NULL'.
-		s cr; nextPutAll:'};'; cr].
-	(cg needToGenerateHeader: (filePath asFileReference basename) file: filePath contents: contents) ifTrue:
-		[[fileStream := VMMaker forceNewFileNamed: filePath] 
-			on: FileDoesNotExistException 
-			do:[^self couldNotOpenFile: filePath].
-		 fileStream nextPutAll: contents; close]
+			            s
+				            cr;
+				            nextPutAll: 'sqExport *pluginExports[] = {'.
+			            s
+				            newLine;
+				            tab;
+				            nextPutAll: 'vm_exports,'.
+			            s
+				            newLine;
+				            tab;
+				            nextPutAll: 'os_exports,'.
+			            self internalPluginsDo: [ :cls |
+					            s
+						            newLine;
+						            tab;
+						            nextPutAll: cls moduleName;
+						            nextPutAll: '_exports,' ].
+			            s
+				            newLine;
+				            tab;
+				            nextPutAll: 'NULL'.
+			            s
+				            cr;
+				            nextPutAll: '};';
+				            cr ].
+	(cg
+		 needToGenerateHeader: filePath asFileReference basename
+		 file: filePath
+		 contents: contents) ifTrue: [
+			[ fileStream := VMMaker forceNewFileNamed: filePath ]
+				on: FileDoesNotExistException
+				do: [ ^ self couldNotOpenFile: filePath ].
+			fileStream
+				nextPutAll: contents;
+				close ]
 ]
 
 { #category : 'generate sources' }
@@ -706,31 +720,40 @@ VMMaker >> generateExternalPlugin: pluginName [
 VMMaker >> generateExternalPlugins [
 	"generate the external plugins"
 
-	self logDateAndTime.
 	self deleteUnwantedExternalPluginDirectories.
 	self vmmakerConfiguration interpreterPluginClass initialize.
-	self externalPluginsDo: [:plugin | 
-		self generateExternalPlugin: plugin].
-	self storeExternalPluginList.
-	self logDateAndTime
+	self externalPluginsDo: [ :plugin |
+		self generateExternalPlugin: plugin ].
+	self storeExternalPluginList
 ]
 
 { #category : 'generate sources' }
 VMMaker >> generateExtraFile [
+
 	| cg |
-	cg := CCodeGenerator new.
+	cg := self createCogitCodeGenerator.
+	cg vmClass: ExtraVMClass.
 	cg addClass: ExtraVMClass.
-	cg storeCodeOnFile: (self sourceFilePathFor: ExtraVMClass sourceFileName) doInlining: self doInlining.
+
+	cg inferTypes.
+	cg 	prepareMethods.
+	
+	cg
+		storeCodeOnFile: (self sourceFilePathFor: ExtraVMClass sourceFileName)
+		doInlining: self doInlining.
+	cg
+		storeAPIExportHeader: ExtraVMClass apiExportHeaderName
+		OnFile: (self includeFilePathFor: ExtraVMClass apiExportHeaderName)
 ]
 
 { #category : 'generate sources' }
-VMMaker >> generateInternalPlugin: pluginName [ 
+VMMaker >> generateInternalPlugin: pluginName [
 	"generate the named internal plugin. Make sure the exports list is actually 
 	correct and write it out"
+
 	self deleteUnwantedInternalPluginDirectories.
 	self privateGenerateInternalPlugin: pluginName.
-	self generateExportsFile.
-	self logDateAndTime
+	self generateExportsFile
 ]
 
 { #category : 'generate sources' }
@@ -739,10 +762,9 @@ VMMaker >> generateInternalPlugins [
 
 	self deleteUnwantedInternalPluginDirectories.
 	self vmmakerConfiguration interpreterPluginClass initialize.
-	self internalPluginsDo: [:plugin | 
-		self privateGenerateInternalPlugin: plugin].
-	self logDateAndTime.
-	self storeInternalPluginList.
+	self internalPluginsDo: [ :plugin |
+		self privateGenerateInternalPlugin: plugin ].
+	self storeInternalPluginList
 ]
 
 { #category : 'generate sources' }
@@ -758,6 +780,7 @@ VMMaker >> generateInterpreterFile [
 	self needsToRegenerateInterpreterFile ifFalse: [^nil].
 
 	cg inferTypes.
+	cg 	prepareMethods.
 
 	self interpreterClass preGenerationHook: cg.
 	vmHeaderContents := cg vmHeaderContentsWithBytesPerWord: self wordSize.
@@ -777,21 +800,20 @@ VMMaker >> generateMainVM [
 	 the objectMemory and interpreter classes are initialized before the Cogit
 	 code is generated."
 
-	self logDateAndTime;
+	self
 		generateInterpreterFile;
 		generateCogitFiles;
 		generateExtraFile;
 		generateInternalPlugins;
-		generateExportsFile;
-		logDateAndTime
+		generateExportsFile
 ]
 
 { #category : 'generate sources' }
 VMMaker >> generatePlugins [
 	"Generate the ``external'' plugins.
 	 If this comes from a generator method, log it for convenience."
-	abortBlock := [^self].
-	self logGeneration.
+
+	abortBlock := [ ^ self ].
 	self generateExternalPlugins
 ]
 
@@ -937,26 +959,6 @@ VMMaker >> interpreterHeaderPath [
 VMMaker >> isFor64BitVM [
 "is my flag to make a 64bit pointer model VM?"
 	^is64BitVM
-]
-
-{ #category : 'UI access' }
-VMMaker >> logDateAndTime [
-	| now |
-	"do it this way since Time now includes milliseconds in some versions."
-	now := Time dateAndTimeNow.
-	logger print: now first; space; print: now last; cr; flush
-]
-
-{ #category : 'generate sources' }
-VMMaker >> logGeneration [
-	self configurationGeneratorNameOrNil ifNotNil:
-		[:generator|
-		 logger cr; nextPutAll: (generator selector copyReplaceAll: 'generate' with: '').
-		 interpreterClassName ifNotNil:
-			[logger space; nextPutAll: (CCodeGenerator shortMonticelloDescriptionForClass: (Smalltalk classNamed: interpreterClassName))].
-		 sourceDirName ifNotNil:
-			[logger nextPutAll: ' to '; nextPutAll: sourceDirName].
-		 logger cr; flush]
 ]
 
 { #category : 'UI access' }

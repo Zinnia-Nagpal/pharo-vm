@@ -32,7 +32,6 @@ VMClass class >> initializeMiscConstants [
 
 	"Use ifAbsentPut: so that they will get copied back to the
 	 VMMaker's options and dead code will likely be eliminated."
-	PharoVM := InitializationOptions at: #PharoVM ifAbsentPut: [ false ].
 	FEATURE_FFI := InitializationOptions
 		               at: #FEATURE_FFI
 		               ifAbsentPut: [ false ].
@@ -71,7 +70,12 @@ VMClass class >> initializeMiscConstants [
 		                at: #IMMUTABILITY
 		                ifAbsent: [ true ].
 	WIN32 := InitializationOptions at: #WIN32 ifAbsent: [false].
-	PRIdSQINT := InitializationOptions at: #FormatSqInt ifAbsent: [ 'ld' ]
+	PRIdSQINT := InitializationOptions at: #FormatSqInt ifAbsent: [ 'ld' ].
+	
+	PharoVM_VERSION_MAJOR := 12.
+	PharoVM_VERSION_MINOR := 0.
+	PharoVM_VERSION_PATCH := 0
+
 ]
 
 { #category : '*VMMaker' }

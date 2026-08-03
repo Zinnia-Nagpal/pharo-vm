@@ -24,24 +24,24 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> setUp [
 		specialSelectorArray: specialSelectorsArray;
 		specialSelector: 0 put: memory falseObject.
 
-	cogit generateOpenPICPrototype.
+	cogit generateMegamorphicICPrototype.
 ]
 
 { #category : 'tests - PIC' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testLookupExistingMegamorphicPICReturnsPIC [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testLookupExistingMegamorphicICReturnsPIC [
 
-	| selector createdPic specialObjectsArray |
+	| selector createdPic |
 	selector := memory trueObject.
 	
-	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: 1.
 	
-	self assert: (cogit methodZone openPICWithSelector: selector) equals: createdPic.
+	self assert: (cogit methodZone megamorphicICWithSelector: selector) equals: createdPic.
 ]
 
 { #category : 'tests - PIC' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testLookupNonExistingMegamorphicPICReturnsNil [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testLookupNonExistingMegamorphicICReturnsNil [
 
-	self assert: (cogit methodZone openPICWithSelector: memory trueObject) equals: nil
+	self assert: (cogit methodZone megamorphicICWithSelector: memory trueObject) equals: nil
 ]
 
 { #category : 'tests - PIC' }
@@ -52,7 +52,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testMiss [
 
 	selector := memory trueObject.
 	numArgs := 0.
-	createdPic := cogit cogOpenPICSelector: selector numArgs: numArgs.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: numArgs.
 	
 	cogit setCFramePointer: machineSimulator framePointerRegisterValue.
 	cogit setCStackPointer: machineSimulator stackPointerRegisterValue.
@@ -77,12 +77,12 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testMiss [
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICHasTheCorrectPicAbortTrampoline [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICHasTheCorrectPicAbortTrampoline [
 
 	| createdPic selector |
 
 	selector := memory trueObject.
-	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: 1.
 
 	self
 		assert: (cogit backend callTargetFromReturnAddress: createdPic asInteger + cogit missOffset)
@@ -90,80 +90,80 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICHasTheCorrectP
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgs: numArgs [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICNumArgs: numArgs [
 
 	| selector createdPic |
 	selector := memory trueObject.
-	createdPic := cogit cogOpenPICSelector: selector numArgs: numArgs.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: numArgs.
 	self assert: createdPic cmNumArgs equals: numArgs
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith1 [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICNumArgsWith1 [
 
-	self testNewMegamorphicPICNumArgs: 1
+	self testNewMegamorphicICNumArgs: 1
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith16 [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICNumArgsWith16 [
 
-	self testNewMegamorphicPICNumArgs: 16
+	self testNewMegamorphicICNumArgs: 16
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith2 [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICNumArgsWith2 [
 
-	self testNewMegamorphicPICNumArgs: 2
+	self testNewMegamorphicICNumArgs: 2
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith4 [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICNumArgsWith4 [
 
-	self testNewMegamorphicPICNumArgs: 4
+	self testNewMegamorphicICNumArgs: 4
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith8 [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICNumArgsWith8 [
 
-	self testNewMegamorphicPICNumArgs: 8
+	self testNewMegamorphicICNumArgs: 8
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWithoutArgs [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICNumArgsWithoutArgs [
 
-	self testNewMegamorphicPICNumArgs: 0
+	self testNewMegamorphicICNumArgs: 0
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICSelector [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICSelector [
 	| createdPic selector |
 
 	selector := memory trueObject.
-	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: 1.
 	self assert: createdPic selector equals: selector
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICSize [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICSize [
 	| createdPic selector |
 
 	selector := memory trueObject.
-	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
-	self assert: createdPic blockSize equals: cogit openPICSize.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: 1.
+	self assert: createdPic blockSize equals: cogit megamorphicICSize.
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICType [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicICType [
 
 	| selector createdPic |
 	selector := memory trueObject.
-	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: 1.
 	self assert: createdPic cmType equals: CMMegamorphicIC.
 
 ]
 
 { #category : 'tests - PIC' }
-VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICCallsNewPIC [
+VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicICCallsNewPIC [
 
 	| selector literalIndex method createdPic returnAfterCallAddress patchedCogMethod startAddress |
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
@@ -191,7 +191,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICC
 		                    cogit genSendLiteralSelector0ArgsBytecode ]
 		                    selector: selector.
 
-	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
+	createdPic := cogit cogMegamorphicICSelector: selector numArgs: 1.
 
 	"We call to get to the send trampoline"
 	self
@@ -215,7 +215,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICC
 	
 	cogit flushICacheFrom: startAddress to: startAddress + 32.
 
-	"Let's rerun it to check if it gets to the patched address openPic"
+	"Let's rerun it to check if it gets to the patched address megamorphicIC"
 	self
 		runFrom: startAddress
 		until: createdPic asInteger + cogit entryOffset.

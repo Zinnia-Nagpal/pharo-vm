@@ -111,19 +111,22 @@ VMClass class >> declareCAsUSqLong: arrayOfVariableNames in: aCCodeGenerator [
 ]
 
 { #category : 'translation' }
-VMClass class >> declareCVarsIn: aCCodeGenerator [ 
+VMClass class >> declareCVarsIn: aCCodeGenerator [
 	"Declare any additional variables and/or add type declarations for existing variables."
+
 	aCCodeGenerator
 		var: #expensiveAsserts
-		declareC: 'char expensiveAsserts = 0'
+		declareC: 'char expensiveAsserts = 0'.
+
+	aCCodeGenerator declareVar: 'memoryManager' type: #implicit
 ]
 
 { #category : 'translation' }
-VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defaultName [	
+VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defaultName [
+
 	aCCodeGenerator
 		var: #interpreterVersion
-		declareC: 'const char *interpreterVersion = "Croquet Closure ', defaultName, ' VM [',
-					(aCCodeGenerator shortMonticelloDescriptionForClass: self),']"'.
+		declareC: 'const char *interpreterVersion = "PharoVM"'
 ]
 
 { #category : 'accessing class hierarchy' }
@@ -151,7 +154,7 @@ VMClass class >> initialize [
 { #category : 'initialization' }
 VMClass class >> initializePrimitiveErrorCodes [
 	"Define the VM's primitive error codes.  N.B. these are
-	 replicated in platforms/Cross/vm/sqVirtualMachine.h."
+	 replicated in platforms/Cross/vm/virtualMachine.h."
 	"VMClass initializePrimitiveErrorCodes"
 	| pet |
 	PrimErrTableIndex := 51. "Zero-relative"
@@ -255,17 +258,20 @@ VMClass class >> memoryManagerVersion [
 ]
 
 { #category : 'translation' }
-VMClass class >> monticelloDescription [
-	"Answer the Monticello version of the packlage containing the receiver.
-	 This is a hook to allow subclasses to expand upon the default monticello description."
-	^CCodeGenerator monticelloDescriptionFor: self
-]
-
-{ #category : 'translation' }
-VMClass class >> mustBeGlobal: var [
+VMClass class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
 	^var = #expensiveAsserts
+]
+
+{ #category : 'translation' }
+VMClass class >> mustBeGlobalInFile: var [ 
+	^ false
+]
+
+{ #category : 'translation' }
+VMClass class >> namesOfVariablesToLocalize [
+	^#()
 ]
 
 { #category : 'translation' }
@@ -566,20 +572,6 @@ VMClass >> fgetc: file [
 
 	<doNotGenerate>
 	^ file next
-]
-
-{ #category : 'memory access' }
-VMClass >> floatAtPointer: pointer [
-
-	<doNotGenerate>
-	self notYetImplemented 
-]
-
-{ #category : 'memory access' }
-VMClass >> floatAtPointer: pointer put: value [
-
-	<doNotGenerate>
-	self notYetImplemented
 ]
 
 { #category : 'file primitives' }
@@ -1298,8 +1290,12 @@ VMClass >> unalignedAccessError [
 
 { #category : 'debug support' }
 VMClass >> unreachable [
+	"Hint for the developper (and the compiler) that the instruction is unreachable.
+	Raise an error in debug mode, but is a noop on release mode."
+
 	<inline: true>
-	self error: 'UNREACHABLE'
+	self assert: false.
+	^nil
 ]
 
 { #category : 'memory access' }

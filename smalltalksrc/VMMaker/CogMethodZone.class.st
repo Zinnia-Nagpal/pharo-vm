@@ -1,5 +1,5 @@
 "
-I am a simple allocator/deallocator for the native code zone.  I also manage the youngReferers list, which contains methods that may refer to one or more young objects, and the openPICList which is a linked list of all open PICs in the zone.
+I am a simple allocator/deallocator for the native code zone.  I also manage the youngReferers list, which contains methods that may refer to one or more young objects, and the megamorphicICList which is a linked list of all megamorphic ICs in the zone.
 
 Instance Variables
 	baseAddress:								<Integer address>
@@ -11,7 +11,7 @@ Instance Variables
 	mzFreeStart:								<Integer address>
 	objectMemory:								<NewCoObjectMemory|SpurCoMemoryManager>
 	objectRepresentation:						<CogObjectRepresentation:>
-	openPICList:								<CogMethod *|nil>
+	megamorphicICList:								<CogMethod *|nil>
 	unpairedMethodList:						<CogMethod *|nil>
 	youngReferrers:							<Integer address>
 
@@ -42,8 +42,8 @@ objectMemory
 objectRepresentation
 	- simulation-only
 
-openPICList
-	- the head of the list of open PICs
+megamorphicICList
+	- the head of the list of megamorphic ICs
 
 unpairedMethodList
 	- the head of the list of Cog methods with no associated CompiledMethod object (Newspeak only)
@@ -59,7 +59,6 @@ Class {
 		'youngReferrers',
 		'unpairedMethodList',
 		'methodCount',
-		'openPICList',
 		'mzFreeStart',
 		'baseAddress',
 		'limitAddress',
@@ -69,7 +68,8 @@ Class {
 		'objectRepresentation',
 		'cogit',
 		'objectMemory',
-		'percentageToEnsureRelease'
+		'percentageToEnsureRelease',
+		'megamorphicICList'
 	],
 	#pools : [
 		'CogMethodConstants',
@@ -124,13 +124,14 @@ CogMethodZone >> addAllToYoungReferrers [
 ]
 
 { #category : 'accessing' }
-CogMethodZone >> addToOpenPICList: anOpenPIC [
-	<var: #anOpenPIC type: #'CogMethod *'>
-	self assert: anOpenPIC cmType = CMMegamorphicIC.
-	self assert: (openPICList == nil
-				or: [openPICList cmType = CMMegamorphicIC]).
-	anOpenPIC nextOpenPIC: openPICList asUnsignedInteger.
-	openPICList := anOpenPIC
+CogMethodZone >> addToMegamorphicICList: aMegamorphicIC [
+	<var: #aMegamorphicIC type: #'CogMethod *'>
+	
+	self assert: aMegamorphicIC cmType = CMMegamorphicIC.
+	self assert: (megamorphicICList == nil
+				or: [megamorphicICList cmType = CMMegamorphicIC]).
+	aMegamorphicIC nextMegamorphicIC: megamorphicICList asUnsignedInteger.
+	megamorphicICList := aMegamorphicIC
 ]
 
 { #category : 'young referers' }
@@ -156,10 +157,7 @@ CogMethodZone >> allocate: numBytes [
 	allocation := mzFreeStart.
 	mzFreeStart := mzFreeStart + roundedBytes.
 	methodCount := methodCount + 1.
-	self cCode: '' inSmalltalk:
-		[(cogit breakPC isInteger
-		   and: [cogit breakPC between: allocation and: mzFreeStart]) ifTrue:
-			[cogit singleStep: true]].
+
 	^allocation
 ]
 
@@ -234,58 +232,64 @@ CogMethodZone >> cogit [
 
 { #category : 'compaction' }
 CogMethodZone >> compactCompiledCode [
-	| objectHeaderValue source dest bytes |
+
 	<var: #source type: #'CogMethod *'>
 	<var: #dest type: #'CogMethod *'>
+	| objectHeaderValue source dest |
 	compactionInProgress := true.
 	objectHeaderValue := objectMemory nullHeaderForMachineCodeMethod.
 	source := coInterpreter cCoerceSimple: baseAddress to: #'CogMethod *'.
-	self voidOpenPICList. "The list will be rebuilt with the current live set"
+	self voidMegamorphicICList. "The list will be rebuilt with the current live set"
 	methodCount := 0.
-	[source < self limitZony
-	 and: [source cmType ~= CMFree]] whileTrue:
-		[self assert: (cogit cogMethodDoesntLookKosher: source) = 0.
-		 source objectHeader: objectHeaderValue.
-		 source cmUsageCount > 0 ifTrue:
-			[source cmUsageCount: source cmUsageCount // 2].
-		 SistaVM ifTrue:
-			[self clearSavedPICUsageCount: source].
-		 source cmType = CMMegamorphicIC ifTrue:
-			[self addToOpenPICList: source].
-		 methodCount := methodCount + 1.
-		 source := self methodAfter: source].
-	source >= self limitZony ifTrue:
-		[^self halt: 'no free methods; cannot compact.'].
+	[ source < self limitZony and: [ source cmType ~= CMFree ] ]
+		whileTrue: [
+			self assert: (cogit cogMethodDoesntLookKosher: source) = 0.
+			source objectHeader: objectHeaderValue.
+			source cmUsageCount > 0 ifTrue: [
+				source cmUsageCount: source cmUsageCount // 2 ].
+			SistaVM ifTrue: [ self clearSavedPICUsageCount: source ].
+			source cmType = CMMegamorphicIC ifTrue: [
+				self addToMegamorphicICList: source ].
+			methodCount := methodCount + 1.
+			source := self methodAfter: source ].
+	source >= self limitZony ifTrue: [
+		^ self halt: 'no free methods; cannot compact.' ].
 	dest := source.
-	[source < self limitZony] whileTrue:
-		[self assert: (cogit maybeFreeCogMethodDoesntLookKosher: source) = 0.
-		 bytes := source blockSize.
-		 source cmType ~= CMFree ifTrue:
-			[methodCount := methodCount + 1.
-			 objectMemory memmove: dest _: source _: bytes.
-			 dest objectHeader: objectHeaderValue.
-			 dest cmType = CMMethod
-				ifTrue:
-					["There should be a one-to-one mapping between bytecoded and cog methods."
-					"Only update the original method's header if it is referring to this CogMethod."
-					 (coInterpreter rawHeaderOf: dest methodObject) asInteger = source asInteger
-						ifTrue:
-							[coInterpreter rawHeaderOf: dest methodObject put: dest asInteger]
-						ifFalse:
-							[self assert: (cogit noAssertMethodClassAssociationOf: dest methodObject) = objectMemory nilObject]]
-				ifFalse:
-					[SistaVM ifTrue:
-						[self clearSavedPICUsageCount: dest].
-					 dest cmType = CMMegamorphicIC ifTrue:
-						[self addToOpenPICList: dest]].
-			 dest cmUsageCount > 0 ifTrue:
-				[dest cmUsageCount: dest cmUsageCount // 2].
-			 dest := coInterpreter
-								cCoerceSimple: dest asUnsignedInteger + bytes
-								to: #'CogMethod *'].
-		 source := coInterpreter
-							cCoerceSimple: source asUnsignedInteger + bytes
-							to: #'CogMethod *'].
+	[ source < self limitZony ] whileTrue: [
+		| byteSize |
+		self assert: (cogit maybeFreeCogMethodDoesntLookKosher: source) = 0.
+
+		byteSize := source blockSize.
+
+		source cmType ~= CMFree ifTrue: [
+			methodCount := methodCount + 1.
+			objectMemory memmove: dest _: source _: byteSize.
+			dest objectHeader: objectHeaderValue.
+			dest cmType = CMMethod
+				ifTrue: [ "
+					There should be a one-to-one mapping between bytecoded and cog methods.
+					Only update the original method's header if it is referring to this CogMethod."
+					(coInterpreter rawHeaderOf: dest methodObject) asInteger
+					= source asInteger
+						ifTrue: [
+						coInterpreter rawHeaderOf: dest methodObject put: dest asInteger ]
+						ifFalse: [
+							self assert:
+								(cogit noAssertMethodClassAssociationOf: dest methodObject)
+								= objectMemory nilObject ] ]
+				ifFalse: [
+					SistaVM ifTrue: [ self clearSavedPICUsageCount: dest ].
+					dest cmType = CMMegamorphicIC ifTrue: [
+						self addToMegamorphicICList: dest ] ].
+			dest cmUsageCount > 0 ifTrue: [
+				dest cmUsageCount: dest cmUsageCount // 2 ].
+			dest := self methodAfter: dest ].
+		"One would like to write `source := self methodAfter: source` here.
+		 That's not possible because we nuked it from existence. This here is
+		 therefore an inlined copy of that method"
+		source := coInterpreter
+		cCoerceSimple: (self roundUpLength: source asInteger + byteSize)
+		to: #'CogMethod *'. ].
 	mzFreeStart := dest asUnsignedInteger.
 	methodBytesFreedSinceLastCompaction := 0.
 	compactionInProgress := false
@@ -312,40 +316,43 @@ CogMethodZone >> ensureInYoungReferrers: cogMethod [
 ]
 
 { #category : 'jit - api' }
-CogMethodZone >> followForwardedLiteralsInOpenPICList [
+CogMethodZone >> followForwardedLiteralsInMegamorphicICList [
 	<option: #SpurObjectMemory>
-	| openPIC |
-	<var: #openPIC type: #'CogMethod *'>
-	openPIC := openPICList.
-	[openPIC notNil] whileTrue:
-		[cogit followForwardedLiteralsIn: openPIC.
-		 openPIC := self cCoerceSimple: openPIC nextOpenPIC to: #'CogMethod *'.]
+	
+	| megamorphicIC |
+	<var: #megamorphicIC type: #'CogMethod *'>
+	megamorphicIC := megamorphicICList.
+	[megamorphicIC notNil] whileTrue:
+		[cogit followForwardedLiteralsIn: megamorphicIC.
+		 megamorphicIC := self cCoerceSimple: megamorphicIC nextMegamorphicIC to: #'CogMethod *'.]
 ]
 
 { #category : 'compaction' }
 CogMethodZone >> freeMethod: cogMethod [
+
 	<api>
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: false>
 	self assert: cogMethod cmType ~= CMFree.
 	self assert: (cogit cogMethodDoesntLookKosher: cogMethod) = 0.
-	cogMethod cmType = CMMethod ifTrue:
-		["There should be a one-to-one mapping between bytecoded and cog methods."
-		"Only reset the original method's header if it is referring to this CogMethod."
-		 (coInterpreter rawHeaderOf: cogMethod methodObject) asInteger = cogMethod asInteger
-			ifTrue:
-				[ coInterpreter rawHeaderOf: cogMethod methodObject put: cogMethod methodHeader ]
-			ifFalse:
-				[self cCode: [self assert: (cogit noAssertMethodClassAssociationOf: cogMethod methodObject) = objectMemory nilObject]
-					inSmalltalk: [self assert: ((cogit noAssertMethodClassAssociationOf: cogMethod methodObject) = objectMemory nilObject
-											or: [coInterpreter isKindOf: CurrentImageCoInterpreterFacade])] ].
-		 cogit maybeFreeCountersOf: cogMethod].
-	cogMethod cmType = CMMegamorphicIC ifTrue:
-		[self removeFromOpenPICList: cogMethod].
+	cogMethod cmType = CMMethod ifTrue: [ "There should be a one-to-one mapping between bytecoded and cog methods.""Only reset the original method's header if it is referring to this CogMethod."
+		(coInterpreter rawHeaderOf: cogMethod methodObject) asInteger
+		= cogMethod asInteger
+			ifTrue: [
+				coInterpreter
+					rawHeaderOf: cogMethod methodObject
+					put: cogMethod methodHeader ]
+			ifFalse: [
+				self assert:
+					(cogit noAssertMethodClassAssociationOf: cogMethod methodObject)
+					= objectMemory nilObject ].
+		cogit maybeFreeCountersOf: cogMethod ].
+	cogMethod cmType = CMMegamorphicIC ifTrue: [
+		self removeFromMegamorphicICList: cogMethod ].
 	cogMethod cmRefersToYoung: false.
 	cogMethod cmType: CMFree.
 	methodBytesFreedSinceLastCompaction := methodBytesFreedSinceLastCompaction
-												+ cogMethod blockSize
+	                                       + cogMethod blockSize
 ]
 
 { #category : 'compaction' }
@@ -428,9 +435,25 @@ CogMethodZone >> manageFrom: theStartAddress to: theLimitAddress [
 	<returnTypeC: #void>
 	mzFreeStart := baseAddress := theStartAddress.
 	youngReferrers := limitAddress := theLimitAddress.
-	openPICList := nil.
+	megamorphicICList := nil.
 	methodBytesFreedSinceLastCompaction := 0.
 	methodCount := 0
+]
+
+{ #category : 'accessing' }
+CogMethodZone >> megamorphicICWithSelector: aSelector [
+	| megamorphicIC |
+	<var: #megamorphicIC type: #'CogMethod *'>
+	<returnTypeC: #'CogMethod *'>
+	megamorphicIC := megamorphicICList.
+	[(megamorphicIC == nil
+	  or: [megamorphicIC selector = aSelector]) 
+		ifTrue: [ ^ megamorphicIC ].
+	
+	 "N.B. Use self rather than coInterpreter to avoid attempting to cast nil.
+	  Conversion to CogMethod done in the nextMegamorphicIC accessor."
+	 megamorphicIC := self cCoerceSimple: megamorphicIC nextMegamorphicIC to: #'CogMethod *'.
+	 true] whileTrue
 ]
 
 { #category : 'accessing' }
@@ -553,21 +576,6 @@ CogMethodZone >> occurrencesInYoungReferrers: cogMethod [
 	^count
 ]
 
-{ #category : 'accessing' }
-CogMethodZone >> openPICWithSelector: aSelector [
-	| openPIC |
-	<var: #openPIC type: #'CogMethod *'>
-	<returnTypeC: #'CogMethod *'>
-	openPIC := openPICList.
-	[(openPIC == nil
-	  or: [openPIC selector = aSelector]) ifTrue:
-		[^openPIC].
-	 "N.B. Use self rather than coInterpreter to avoid attempting to cast nil.
-	  Conversion to CogMethod done in the nextOpenPIC accessor."
-	 openPIC := self cCoerceSimple: openPIC nextOpenPIC to: #'CogMethod *'.
-	 true] whileTrue
-]
-
 { #category : 'compaction' }
 CogMethodZone >> planCompaction [
 	"Some methods have been freed.  Compute how much each survivor needs to
@@ -612,7 +620,11 @@ CogMethodZone >> printCogMethods [
 			[CMMegamorphicIC]	->	[no:= no+ 1] }
 			otherwise: [nu := nu + 1].
 		 cogMethod := self methodAfter: cogMethod].
-	coInterpreter print: 'CMMethod '; printNum: nm;  print: ' CMClosedPIC '; printNum: nc;  print: ' CMOpenPIC '; printNum: no;  print: ' CMFree '; printNum: nf.
+	coInterpreter 
+		print: 'CMMethod '; printNum: nm;  
+		print: ' CMPIC '; printNum: nc;  
+		print: ' CMMegamorphicIC '; printNum: no;  
+		print: ' CMFree '; printNum: nf.
 	nu > 0 ifTrue:
 		[coInterpreter print: ' UNKNOWN '; printNum: nu].
 	coInterpreter print: ' total '; printNum: nm+nc+no+nf+nu; cr
@@ -691,16 +703,16 @@ CogMethodZone >> printCogYoungReferrers [
 ]
 
 { #category : 'accessing' }
-CogMethodZone >> printOpenPICList [
+CogMethodZone >> printMegamorphicICList [
 	<api>
-	| n openPIC |
-	<var: #openPIC type: #'CogMethod *'>
+	| n megamorphicIC |
+	<var: #megamorphicIC type: #'CogMethod *'>
 	n := 0.
-	openPIC := openPICList.
-	[openPIC == nil] whileFalse:
+	megamorphicIC := megamorphicICList.
+	[megamorphicIC == nil] whileFalse:
 		[n := n + 1.
-		 coInterpreter printCogMethod: openPIC.
-		 openPIC := self cCoerceSimple: openPIC nextOpenPIC to: #'CogMethod *'].
+		 coInterpreter printCogMethod: megamorphicIC.
+		 megamorphicIC := self cCoerceSimple: megamorphicIC nextMegamorphicIC to: #'CogMethod *'].
 	^n
 ]
 
@@ -742,6 +754,12 @@ CogMethodZone >> quickClearCogCompiledCode [
 
 { #category : 'young referers' }
 CogMethodZone >> relocateAndPruneYoungReferrers [
+	"This method compacts the young referrers array, and updates the references to the methods were moved."
+
+	"Young referrers is an array that holds references to CogMethods that references objects that are in the new space.
+	The young referrers array is stored at the end of the code cache, it grows towards lower addresses.
+	The variable youngReferrers points to the lowest entry in the array, and it spans up to the limitAddress"
+	
 	| source dest next cogMethod |
 	<var: #source type: #usqInt>
 	<var: #dest type: #usqInt>
@@ -790,7 +808,7 @@ CogMethodZone >> relocateMethodsPreCompaction [
 	[cogMethod asUnsignedInteger < mzFreeStart] whileTrue:
 		[cogMethod cmType ~= CMFree ifTrue:
 			[cogMethod cmType = CMPolymorphicIC
-				ifTrue: [cogit relocateCallsInClosedPIC: cogMethod]
+				ifTrue: [cogit relocateCallsInPIC: cogMethod]
 				ifFalse: [cogit relocateCallsAndSelfReferencesInMethod: cogMethod]].
 		 cogMethod := self methodAfter: cogMethod].
 	self relocateAndPruneYoungReferrers.
@@ -798,27 +816,27 @@ CogMethodZone >> relocateMethodsPreCompaction [
 ]
 
 { #category : 'accessing' }
-CogMethodZone >> removeFromOpenPICList: anOpenPIC [
-	<var: #anOpenPIC type: #'CogMethod *'>
+CogMethodZone >> removeFromMegamorphicICList: aMegamorphicIC [
+	<var: #aMegamorphicIC type: #'CogMethod *'>
 	| prevPIC |
 	<var: #prevPIC type: #'CogMethod *'>
-	self assert: anOpenPIC cmType = CMMegamorphicIC.
-	openPICList ifNil: [^nil]. "As it is when compacting or unlinking all sends"
-	self assert: (openPICList cmType = CMMegamorphicIC
-				and: [openPICList nextOpenPIC isNil
-					or: [(self cCoerceSimple: openPICList nextOpenPIC to: #'CogMethod *') cmType = CMMegamorphicIC]]).
-	anOpenPIC = openPICList ifTrue:
+	self assert: aMegamorphicIC cmType = CMMegamorphicIC.
+	megamorphicICList ifNil: [^nil]. "As it is when compacting or unlinking all sends"
+	self assert: (megamorphicICList cmType = CMMegamorphicIC
+				and: [megamorphicICList nextMegamorphicIC isNil
+					or: [(self cCoerceSimple: megamorphicICList nextMegamorphicIC to: #'CogMethod *') cmType = CMMegamorphicIC]]).
+	aMegamorphicIC = megamorphicICList ifTrue:
 		["N.B. Use self rather than coInterpreter to avoid attempting to cast nil.
-		  Conversion to CogMethod done in the nextOpenPIC accessor."
-		 openPICList := self cCoerceSimple: anOpenPIC nextOpenPIC to: #'CogMethod *'.
+		  Conversion to CogMethod done in the nextMegamorphicIC accessor."
+		 megamorphicICList := self cCoerceSimple: aMegamorphicIC nextMegamorphicIC to: #'CogMethod *'.
 		 ^nil].
-	prevPIC := openPICList.
+	prevPIC := megamorphicICList.
 	[self assert: (prevPIC ~~ nil
 				and: [prevPIC cmType = CMMegamorphicIC]).
-	 prevPIC nextOpenPIC = anOpenPIC asUnsignedInteger ifTrue:
-		[prevPIC nextOpenPIC: anOpenPIC nextOpenPIC.
+	 prevPIC nextMegamorphicIC = aMegamorphicIC asUnsignedInteger ifTrue:
+		[prevPIC nextMegamorphicIC: aMegamorphicIC nextMegamorphicIC.
 		 ^nil].
-	  prevPIC := self cCoerceSimple: prevPIC nextOpenPIC to: #'CogMethod *'.
+	  prevPIC := self cCoerceSimple: prevPIC nextMegamorphicIC to: #'CogMethod *'.
 	  true] whileTrue
 ]
 
@@ -901,8 +919,8 @@ CogMethodZone >> shouldFreeMethod: cogMethod given: freeableUsage [
 ]
 
 { #category : 'accessing' }
-CogMethodZone >> voidOpenPICList [
-	openPICList := nil
+CogMethodZone >> voidMegamorphicICList [
+	megamorphicICList := nil
 ]
 
 { #category : 'jit - api' }

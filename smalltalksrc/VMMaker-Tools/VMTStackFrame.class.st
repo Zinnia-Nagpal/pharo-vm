@@ -38,16 +38,6 @@ VMTStackFrame >> framePointer: anObject [
 	framePointer := anObject
 ]
 
-{ #category : 'debugging' }
-VMTStackFrame >> gtStackFrameInspector: composite [
-	<gtInspectorPresentationOrder: 0>
-	^ composite fastTable
-		title: 'StackFrame';
-		display: [ :anObject | self descriptors ];
-		column: 'Name' evaluated: [ :descriptor | descriptor name ];
-		column: 'Value' evaluated: [ :descriptor | descriptor value ]
-]
-
 { #category : 'accessing' }
 VMTStackFrame >> interpreter [
 	^ memory coInterpreter
