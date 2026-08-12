@@ -1,6 +1,3 @@
-"
-FloatArrayPlugin provides fast access to FloatArrays for batch processing of float numbers
-"
 Class {
 	#name : 'FloatArrayPlugin',
 	#superclass : 'InterpreterPlugin',

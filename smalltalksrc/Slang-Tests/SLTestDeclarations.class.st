@@ -83,9 +83,9 @@ SLTestDeclarations >> testLocalsReturnsDirectLocals [
 SLTestDeclarations >> testStructInstanceVariablesWithoutTypeDeclaration [
 
 	ccg
-		addStructClasses: (OrderedCollection with: MockVMStructWithoutTypeDeclarations) 
+		addStructClasses:
+		(OrderedCollection with: MockVMStructWithoutTypeDeclarations)
 		silently: true.
-
 	self
 		should: [ ccg emitCTypesOn: (WriteStream on: #(  )) ]
 		raise: TranslationError

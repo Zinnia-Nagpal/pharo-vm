@@ -1,21 +1,3 @@
-"
-SpurSelectiveCompactor compacts memory by selecting the memory segments with the most free space and compacting only those, to limit fragmentation while being really quick to perform. The algorithm is fast mostly because it does not update pointers: they are updated lazily during the next marking phase, so there is no need to read the fields of objects in other memory segments that the one compacted.
-
-The algorithm works as follow. First, a global sweep pass iterates over the memory linearly, changing unmarked objects to free chunks and concatenating free chunks. During the global sweep phase, the segments of the heap are analysed to determine the percentage of occupation. Second, the least occupied segments are compacted by copying the remaining live objects into an entirely free segment, called regionToFill (we detail later in the paragraph where regionToFill comes from), changing their values to forwarding objects and marking the free chunks as unavailable (removed from free list and marked as data objects). Third, the next marking phase removes all forwarders. Fourth, at the beginning of the next compaction phase the compacted segments from the previous GC can be entirely marked as free space (No need to check anything inside, there were only forwarders and trash data). One of the compacted segment is then selected as the segmentToFill, others are just marked as free chunks. 
-
-The compaction is effectively partial, compacting only the most critical segments of the heap to limit fragmentation. Compaction time is crazy low, since a low number of objects are moved and pointer updated is lazily done during the next marking phase, while still preventing memory fragmentation.
-
-Now this works well when biasForGC is true, but when performing a snapshot, the compactor is just total crap (we need to figure out a solution).
-
-segmentToFill <SegInfo> the segment that will be filled through the copying algorithm
-lastLilliputianChunk <Oop to FreeChunk> This is used as a performance trick for lilliputian free chunks. See below.
-
-Segment abuse:
-The swizzle field of segInfo is abused by using the low 8 bits for occupation and the 9th bit as isBeingCompacted bit.
-
-Performance trick for lilliputian chunks:
-Specific free chunks (called lilliputian, see isLilliputianSize:) are managed using a single linked list instead of a double linked list since there's not enough room in the free chunk for the back pointer. During the sweep phase this is not a problem since we're rebuilding the free chunk structure, but during selective compaction we're detaching free chunks from the free chunk structure and that can be horribly slow (10 seconds sometimes at 20Gb heap due to many iteration over the single linked list). To work around this problem, the sweep phase use lastLilliputianChunk variable to sort the lilliputian free chunk single linked list in ascending address order (See interceptAddFreeChunkWithBytes:at:). During the selective compation phase, the same variable is re-used to iterate at most once over the single linked list while detaching lilliputian chunks (See incrementalUnlinkSmallChunk:). In addition, each segment is annotated during the sweep phase with the last lilliputian chunk it holds. Hence, during the compaction phase, the linked list is iterated but the iteration can jump to the last chunk of the previous segment to compact.
-"
 Class {
 	#name : 'SpurSelectiveCompactor',
 	#superclass : 'SpurSweeper',

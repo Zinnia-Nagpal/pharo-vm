@@ -1,6 +1,3 @@
-"
-A CSlangPrettyPrinterTest is a test class for testing the behavior of CSlangPrettyPrinter
-"
 Class {
 	#name : 'CSlangPrettyPrinterTest',
 	#superclass : 'TestCase',

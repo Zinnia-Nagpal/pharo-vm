@@ -1,6 +1,3 @@
-"
-I am a class that helps organize the StackInterpreter's collection of stack pages.  I represent the control block for a single stack page in the collection of stack pages represented by an InterpreterStackPages or CoInterpreterStackPages instance.
-"
 Class {
 	#name : 'VMStackPage',
 	#superclass : 'VMStructType',

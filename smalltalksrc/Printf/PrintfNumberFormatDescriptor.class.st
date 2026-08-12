@@ -1,6 +1,6 @@
 Class {
-	#name : #PrintfNumberFormatDescriptor,
-	#superclass : #PrintfFormatDescriptor,
+	#name : 'PrintfNumberFormatDescriptor',
+	#superclass : 'PrintfFormatDescriptor',
 	#instVars : [
 		'operator',
 		'padding',
@@ -12,10 +12,11 @@ Class {
 		'Cased',
 		'Radix'
 	],
-	#category : #Printf
+	#category : 'Printf',
+	#package : 'Printf'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 PrintfNumberFormatDescriptor class >> initialize [
 	"PrintfNumberFormatDescriptor initialize"
 	Base := Dictionary newFromPairs: #(	$d 10
@@ -35,13 +36,13 @@ PrintfNumberFormatDescriptor class >> initialize [
 	Cased := 'AaEeFfGgXx'
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PrintfNumberFormatDescriptor class >> newFrom: desc [
 	desc class == self ifTrue: [^ desc].
 	^ (super newFrom: desc) setPadding: desc padding
 ]
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfNumberFormatDescriptor >> applyOperator: object [ 
 	"Character and Number are the only valid classes"
 
@@ -61,12 +62,12 @@ PrintfNumberFormatDescriptor >> applyOperator: object [
 		ifFalse: [string]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfNumberFormatDescriptor >> base [
 	^ Base at: operator
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 PrintfNumberFormatDescriptor >> initialize [
 	super initialize.
 	padding := $ .
@@ -74,12 +75,12 @@ PrintfNumberFormatDescriptor >> initialize [
 	space := false
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfNumberFormatDescriptor >> padding [
 	^ padding
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 PrintfNumberFormatDescriptor >> printOn: aStream [
 	super printOn: aStream.
 	padding == $0 ifTrue: [aStream nextPut: $0].
@@ -89,39 +90,39 @@ PrintfNumberFormatDescriptor >> printOn: aStream [
 	aStream nextPut: operator
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfNumberFormatDescriptor >> radix [
 	radix := true
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfNumberFormatDescriptor >> radixString [
 	^ Radix at: operator
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfNumberFormatDescriptor >> setOperator: char [
 	operator := char
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfNumberFormatDescriptor >> setPadding: paddingChar [
 	padding := paddingChar
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfNumberFormatDescriptor >> space [
 	space := true
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfNumberFormatDescriptor >> stringLength [
 	^precision isNil
 		ifTrue: [SmallInteger maxVal]
 		ifFalse: [precision]
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfNumberFormatDescriptor >> zero [
 	padding := $0
 ]

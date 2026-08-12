@@ -1,19 +1,3 @@
-"
-This class contains tests for the StackBuilder.
-
-builder <StackBuilder> stack builder used during the tests.
-
-The following IVs are used to test that the stack is ordered correctly in their tests.
-(see protocol #test-order)
-stackElement1
-stackElement2
-instructionPointer
-receiver
-context
-temp1
-temp2
-method
-"
 Class {
 	#name : 'StackBuilderTest',
 	#superclass : 'VMInterpreterTests',

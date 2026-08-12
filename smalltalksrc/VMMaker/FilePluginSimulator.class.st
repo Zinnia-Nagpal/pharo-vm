@@ -1,6 +1,3 @@
-"
-File plugin simulation for the VM simulator
-"
 Class {
 	#name : 'FilePluginSimulator',
 	#superclass : 'FilePlugin',

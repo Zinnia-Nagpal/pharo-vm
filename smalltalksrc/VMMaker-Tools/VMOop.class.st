@@ -1,11 +1,3 @@
-"
-A reified view of a `oop` (an integer address) for a `memory` manager.
-
-This class is used for debuging and vizualisation to handle oops as first object-oriented programing citizens when coding visual inspectors.
-They obviously *should not* be used for implementing runtime behavior.
-
-VMOops are also indented to be robust and capable of dealing with corrupted things (because we rarely debug uncorrupted memory), or during low-level operations (durring GC for instance).
-"
 Class {
 	#name : 'VMOop',
 	#superclass : 'Object',

@@ -1,6 +1,6 @@
-Extension { #name : #WriteStream }
+Extension { #name : 'WriteStream' }
 
-{ #category : #'*Printf-printing' }
+{ #category : '*Printf-printing' }
 WriteStream >> f: printfString printf: arguments [
 	"Use the printf convention to output on the receiver."
 	^(PrintfFormatString new setFormat: printfString)

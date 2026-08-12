@@ -1,40 +1,16 @@
-"
-Format description 
-	syntax: %{flags}{width}{precision}{long}<operator> 
-	
-	flags 
-		-		left flush 
-		+		right flush 
-		space	non-negative number are preceeded by a blank 
-		#		display integer with a radix indicator (0=octal, 0x=hex, float have .) 
-		0		0 is used as left padding character for numbers 
-	width		minimum field width (rest is padded) 
-	.precision	maximum field width or trailing digits 
-	long		ignored 
-	operator 
-		c		display object as character 
-		d		display as integer 
-		e,E		float in scientific notation 
-		f		display as float 
-		g,G		display as f or e,E using least amount of space 
-		o		display as octal value 
-		s		display as string 
-		u		display as unsigned 
-		x,X		display as hex value 
-	
-"
 Class {
-	#name : #PrintfFormatString,
-	#superclass : #Object,
+	#name : 'PrintfFormatString',
+	#superclass : 'Object',
 	#instVars : [
 		'format',
 		'string',
 		'outputStream'
 	],
-	#category : #Printf
+	#category : 'Printf',
+	#package : 'Printf'
 }
 
-{ #category : #examples }
+{ #category : 'examples' }
 PrintfFormatString class >> examples [
 	self inform: ('Here is a string "%s".' printf: 'hello world').
 	self inform: ('Here is a string "%s" and another shortened "%-14.7s".'
@@ -51,7 +27,7 @@ PrintfFormatString class >> examples [
 		printf: ((Array with: 'long' with: 'hello world' with: 'hello world' with: 42.0) copyWith: 42.1234567)).
 ]
 
-{ #category : #printf }
+{ #category : 'printf' }
 PrintfFormatString >> << object [ 
 	"Render object according to next format descriptor in format. 
 	Append it to string"
@@ -88,7 +64,7 @@ PrintfFormatString >> << object [
 	^self string
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatString >> collectFormatDescriptorsAndStrings: formatStream [
 	format := ReadWriteStream on: (Array new: 10).
 	string := ReadWriteStream on: (Array new: 10).
@@ -101,7 +77,7 @@ PrintfFormatString >> collectFormatDescriptorsAndStrings: formatStream [
 	 format nextPut: (PrintfFormatDescriptor scanFrom: formatStream)] repeat
 ]
 
-{ #category : #printf }
+{ #category : 'printf' }
 PrintfFormatString >> f: aStream printf: arguments [
 	"inst var string holds all text contained in the formatstring. %f blabla %d"
 	| position savedStream |
@@ -116,7 +92,7 @@ PrintfFormatString >> f: aStream printf: arguments [
 	^aStream position - position
 ]
 
-{ #category : #printf }
+{ #category : 'printf' }
 PrintfFormatString >> printf: arguments [
 	"inst var string holds all text contained in the formatstring. %f blabla %d"
 
@@ -126,7 +102,7 @@ PrintfFormatString >> printf: arguments [
 	^outputStream position
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatString >> process: arguments [
  	arguments asArgumentArrayForFormatString do: 
 		[:object | 
@@ -138,14 +114,14 @@ PrintfFormatString >> process: arguments [
         string atEnd ifFalse: [outputStream nextPutAll: string next]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatString >> reset [
         format reset.
         string reset.
         outputStream reset
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatString >> scanStringFrom: aStream [ 
 	| newString |
 	newString := (String new: 40) writeStream.
@@ -163,7 +139,7 @@ PrintfFormatString >> scanStringFrom: aStream [
 	^newString contents
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 PrintfFormatString >> setFormat: aString [
 	| formatStream |
 	"copy actual formatstrings to format"
@@ -175,7 +151,7 @@ PrintfFormatString >> setFormat: aString [
 	self collectFormatDescriptorsAndStrings: formatStream
 ]
 
-{ #category : #printf }
+{ #category : 'printf' }
 PrintfFormatString >> string [
 	^outputStream contents
 ]

@@ -1,6 +1,3 @@
-"
-Provide MIDI support, if your platform provides it. 
-"
 Class {
 	#name : 'MIDIPlugin',
 	#superclass : 'SmartSyntaxInterpreterPlugin',

@@ -5570,24 +5570,21 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
 { #category : 'tests-builtins' }
 SlangBasicTranslationTest >> testSendStructAccessorWithReservedWordSelector [
-	"Tests if the renaming of the accessors impacts the struct accessing"
 
-	| translation send |
-	generator addStructClasses: { MockVMStructWithReservedWords }.
-	generator renameKeywordsConflicts.
-
+	| tmp1 tmp2 tmp4 |
+	generator
+		addStructClasses: { MockVMStructWithReservedWords };
+		renameKeywordsConflicts.
+	tmp4 := Dictionary new.
+	tmp4 at: 'structInstance' put: 'MockVMStructWithReservedWords*'.
 	generator pushScope:
-		(TStatementListNode new addDeclarations: (Dictionary new
-				  at: 'structInstance' put: 'MockVMStructWithReservedWords*';
-				  yourself)).
-	send := TSendNode
+		(TStatementListNode new addDeclarations: tmp4 yourself).
+	tmp2 := TSendNode
 		        receiver: (TVariableNode named: 'structInstance')
 		        selector: #case
 		        arguments: {  }.
-
-	translation := self translate: send.
-
-	self assert: translation equals: '(structInstance->case_1)'
+	tmp1 := self translate: tmp2.
+	self assert: tmp1 equals: '(structInstance->case_1)'
 ]
 
 { #category : 'tests-assignment' }
@@ -6380,17 +6377,15 @@ SlangBasicTranslationTest >> testSendWordSize [
 
 { #category : 'tests-builtins' }
 SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
-	"Tests if the struct field is renamed when it's a reserved word"
 
-	| translation |
-	
-	generator addStructClasses: { MockVMStructWithReservedWords }.
-	generator renameKeywordsConflicts.
-	generator vmClass: VMClass.
-
-	translation := String streamContents: [ :s | generator emitCTypesOn: s ].
-
-	self assert: translation equals: 'typedef struct {
+	| tmp1 |
+	generator
+		addStructClasses: { MockVMStructWithReservedWords };
+		renameKeywordsConflicts;
+		vmClass: VMClass.
+	tmp1 := String streamContents: [ :arg1 |
+		        generator emitCTypesOn: arg1 ].
+	self assert: tmp1 equals: 'typedef struct {
 	char *foo;
 	char *case_1;
  } MockVMStructWithReservedWords;

@@ -1,9 +1,3 @@
-"
-I am a callgraph visitor that computes the free variables used recursively by a method and its callees.
-
-I keep inside a cache of (selector -> list of free variables).
-I can be called many times and i will cut as soon as i finds a method found in a previous invocation.
-"
 Class {
 	#name : 'SLCallGraphFreeVariableCollector',
 	#superclass : 'SLCallGraphVisitor',

@@ -1,24 +1,3 @@
-"
-Provide bitblt support for the vm simulator.
-
-Instance Variables
-	copyBitsBreakCount:	<Integer|nil>
-	copyBitsCount:			<Integer|nil>
-	destinationHashes:		<OrderedCollection|nil>
-
-copyBitsBreakCount
-	- if set, and destinationHashes is non-nil, copyBits will halt at this count
-
-copyBitsCount
-	- if destinationHashes is non-nil this counts copyBits invocations
-
-destinationHashes
-	- if an empty OrderedCollection then this will collect the hash of the destination bitmap after each copyBits operation.
-	  if a non-empty OrderedCollection, then the hash of the destination bitmap will be compared to the corresponding hash
-	  in destinationHashes after each copyBits operation, halting if there is a mismatch.
-	  if nil, then nothing is done.  In this way one can track down regressions by collecting hashes in the unregressed version
-	  and comparing against results in the regressed version.
-"
 Class {
 	#name : 'BitBltSimulator',
 	#superclass : 'BitBltSimulation',

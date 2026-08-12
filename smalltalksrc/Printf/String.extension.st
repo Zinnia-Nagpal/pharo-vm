@@ -1,19 +1,19 @@
-Extension { #name : #String }
+Extension { #name : 'String' }
 
-{ #category : #'*printf' }
+{ #category : '*printf' }
 String >> asArgumentArrayForFormatString [
 
 	^{self}
 ]
 
-{ #category : #'*printf' }
+{ #category : '*printf' }
 String >> printf [
 	^ (self indexOf: $%) ~= 0
 		ifTrue: [ self ]
 		ifFalse: [ (PrintfFormatString new setFormat: self) printf: #() ]
 ]
 
-{ #category : #'*printf' }
+{ #category : '*printf' }
 String >> printf: arguments [
 	"Answer the string that results from applying the receiver
 	 as a printf-style format string to the arguments.  For example

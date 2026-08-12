@@ -1,21 +1,3 @@
-"
-A SpurHybridCompactor is a compactor that uses SpurSelectiveCompactor for normal GC compactions, but uses SpurPlanningCompactor for snapshot.
-
-Instance Variables
-	planNotSelect:			<Boolean>
-	planningCompactor:	<SpurPlanningCompactor>
-	selectiveCompactor:	<SpurSelectiveCompactor>
-
-planNotSelect
-	- the boolean that selects between the two compactors; if true it chooses SpurPlanningCompactor
-
-planningCompactor
-	- the SpurPlanningCompactor
-
-selectiveCompactor
-	- the SpurSelectiveCompactor
-
-"
 Class {
 	#name : 'SpurHybridCompactor',
 	#superclass : 'SpurCompactor',

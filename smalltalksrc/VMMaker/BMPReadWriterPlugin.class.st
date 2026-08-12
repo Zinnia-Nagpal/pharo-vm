@@ -1,6 +1,3 @@
-"
-A plugin to provide fast read and write of .bmp files
-"
 Class {
 	#name : 'BMPReadWriterPlugin',
 	#superclass : 'InterpreterPlugin',

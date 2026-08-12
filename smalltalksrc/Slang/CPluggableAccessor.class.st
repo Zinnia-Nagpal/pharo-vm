@@ -1,6 +1,3 @@
-"
-This class adds generalized block parameter access to C objects for vm simulation
-"
 Class {
 	#name : 'CPluggableAccessor',
 	#superclass : 'CArrayAccessor',

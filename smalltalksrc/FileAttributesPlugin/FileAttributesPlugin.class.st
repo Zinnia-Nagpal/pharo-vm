@@ -1,35 +1,16 @@
-"
-FileAttributesPlugin defines the named primitives used by the FileAttributes.
-
-For information on stat(), see http://man7.org/linux/man-pages/man2/stat.2.html
-For information on access(), see http://man7.org/linux/man-pages/man2/access.2.html
-
-For information on design considerations, see FileAttributes class comments.
-
-Public interface:
-
-The set of primitives available to the image are located in the 'file primitives' protocol.
-
-
-Return codes:
-
-Methods called within FileAttributesPlugin will return 0 on success, or one of the codes contained in the 'errors' protocol on failure.
-
-Public primitives should never return 0.  See each primitive for the success return types.  Failure codes are returned as an integer, or integer wrapped in an array (see FileAttributes class comments for further discussion).
-
-"
 Class {
-	#name : #FileAttributesPlugin,
-	#superclass : #InterpreterPlugin,
+	#name : 'FileAttributesPlugin',
+	#superclass : 'InterpreterPlugin',
 	#instVars : [
 		'hasSecurityPlugin',
 		'sCOFfn',
 		'sCLPfn'
 	],
-	#category : #FileAttributesPlugin
+	#category : 'FileAttributesPlugin',
+	#package : 'FileAttributesPlugin'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 FileAttributesPlugin class >> declareCVarsIn: cg [
 
 	self declareC:  #('sCLPfn' 'sCOFfn')
@@ -66,7 +47,7 @@ FileAttributesPlugin class >> declareCVarsIn: cg [
 /* AKG 2018 - ', self moduleName, '.c translated from class ', self name, ' */'
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 FileAttributesPlugin class >> installedModuleVersionString [
 	"Answer the version string for the plugin which is actually running in the VM"
 
@@ -77,18 +58,18 @@ FileAttributesPlugin class >> installedModuleVersionString [
 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 FileAttributesPlugin class >> isStructType: typeName [
 	^#('struct stat' 'struct dirent' 'osdir') includes: typeName
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 FileAttributesPlugin class >> moduleName [
 
 	^ 'FileAttributesPlugin'
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 FileAttributesPlugin class >> primFileAttributeOf: pathString number: attributeNumber [
 	"Answer a single file attribute.
 	 pathString is the path to the file
@@ -105,7 +86,7 @@ FileAttributesPlugin class >> primFileAttributeOf: pathString number: attributeN
 	^self primitiveFailed
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 FileAttributesPlugin class >> primFileAttributes: pathString attributeNumber: attributeNumber [
 	"Answer a single file attribute.
 	primFileAttributes: aString attributeNumber: attributeNumber
@@ -123,12 +104,12 @@ FileAttributesPlugin class >> primFileAttributes: pathString attributeNumber: at
 	^self primitiveFailed
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPlugin class >> simulatorClass [
 	^FileAttributesPluginSimulator
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 FileAttributesPlugin class >> versionString [
 	"Answer version string for this class. If the installed module is up to date, it
 	will match this version string."
@@ -139,7 +120,7 @@ FileAttributesPlugin class >> versionString [
 
 ]
 
-{ #category : #'private - directory' }
+{ #category : 'private - directory' }
 FileAttributesPlugin >> addressObjectFor: aMachineAddress [
 	"Answer an ExternalAddress object which represents aMachineAddress"
 
@@ -163,7 +144,7 @@ FileAttributesPlugin >> addressObjectFor: aMachineAddress [
 
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPlugin >> attributeArray: attributeArrayPtr for: faPath mask: attributeMask [
 	"Create the attributes array for the specified file (faPath) and set attributeArrayPtr.
 	Which attributes are retrieved are specified in attributeMask.
@@ -221,14 +202,14 @@ FileAttributesPlugin >> attributeArray: attributeArrayPtr for: faPath mask: attr
 	^self faSuccess
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> badSessionId [
 	"The supplied session Id doesn't match the current VM session Id"
 	
 	^-17
 ]
 
-{ #category : #'private - directory' }
+{ #category : 'private - directory' }
 FileAttributesPlugin >> canOpenDirectoryStreamFor: aPathCString length: length [
 	"Answer non-zero if security permits the directory to be listed."
 
@@ -249,7 +230,7 @@ FileAttributesPlugin >> canOpenDirectoryStreamFor: aPathCString length: length [
 
 ]
 
-{ #category : #'private - file' }
+{ #category : 'private - file' }
 FileAttributesPlugin >> canStatFilePath: aPathCString length: length [
 	"Answer non-zero if security permits the a stat() call on the file path. Allow a
 	stat() call only on files which we are permitted to open."
@@ -271,32 +252,32 @@ FileAttributesPlugin >> canStatFilePath: aPathCString length: length [
 
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> cantAllocateMemory [
 	<inline: #always>
 	^-10
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> cantOpenDir [
 	<inline: #always>
 	^-9
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> cantReadlink [
 	<inline: #always>
 	^-8
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> cantStatPath [
 	"SecurityPlugin determined that the requested path cannot be accessed."
 	<inline: #always>
 	^-3
 ]
 
-{ #category : #'private - windows' }
+{ #category : 'private - windows' }
 FileAttributesPlugin >> convertWinToSqueakTime: st [
 	"Convert the supplied Windows SYSTEMTIME to Squeak time"
 	<option: #_WIN32>
@@ -329,13 +310,13 @@ FileAttributesPlugin >> convertWinToSqueakTime: st [
 
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> corruptValue [
 	<inline: #always>
 	^-7
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPlugin >> faPathMax [
 	"Answer the value of the platform support's definition of FA_PATH_MAX, defined in
 	 platforms/{unix.win32,etc}/plugins/FileAttributesPlugin/faSupport.h"
@@ -343,43 +324,43 @@ FileAttributesPlugin >> faPathMax [
 	^#FA_PATH_MAX
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> faSuccess [
 
 	^0
 ]
 
-{ #category : #'private - file' }
+{ #category : 'private - file' }
 FileAttributesPlugin >> fileExecutableFlag [
 	<inline: #always>
 	^ self cCode: [#X_OK] inSmalltalk: [1]
 ]
 
-{ #category : #'private - file' }
+{ #category : 'private - file' }
 FileAttributesPlugin >> fileOKFlag [
 	<inline: #always>
 	^ self cCode: [#F_OK] inSmalltalk: [0]
 ]
 
-{ #category : #'private - file' }
+{ #category : 'private - file' }
 FileAttributesPlugin >> fileReadableFlag [
 	<inline: #always>
 	^ self cCode: [#R_OK] inSmalltalk: [4]
 ]
 
-{ #category : #'private - file' }
+{ #category : 'private - file' }
 FileAttributesPlugin >> fileWriteableFlag [
 	<inline: #always>
 	^ self cCode: [#W_OK] inSmalltalk: [2]
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> getAttributesFailed [
 	<inline: #always>
 	^-4
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 FileAttributesPlugin >> initialiseModule [
 	<export: true>
 
@@ -388,32 +369,32 @@ FileAttributesPlugin >> initialiseModule [
 	^true
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> interpreterError [
 	"The actual error code is stored by the interpreterProxy"
 	<inline: #always>
 	^-15
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> invalidArguments [
 	<inline: #always>
 	^-6
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> invalidRequest [
 	<inline: #always>
 	^-11
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> noMoreData [
 	<inline: #always>
 	^1
 ]
 
-{ #category : #'private - directory' }
+{ #category : 'private - directory' }
 FileAttributesPlugin >> objectFromStruct: aMachineAddress size: structSize [
 	"Answer a ByteArray object which copies the structure at aMachineAddress"
 
@@ -432,7 +413,7 @@ FileAttributesPlugin >> objectFromStruct: aMachineAddress size: structSize [
 
 ]
 
-{ #category : #'private - file' }
+{ #category : 'private - file' }
 FileAttributesPlugin >> pathOop: pathNameOop toBuffer: cPathName maxLen: maxLen [
 	"Copy the supplied path name string object to the supplied c string buffer"
 
@@ -452,7 +433,7 @@ FileAttributesPlugin >> pathOop: pathNameOop toBuffer: cPathName maxLen: maxLen 
 
 ]
 
-{ #category : #'private - directory' }
+{ #category : 'private - directory' }
 FileAttributesPlugin >> pointerFrom: directoryPointerBytes [
 	"Answer the machine address contained in anExternalAddressOop."
 
@@ -472,7 +453,7 @@ FileAttributesPlugin >> pointerFrom: directoryPointerBytes [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveChangeMode [
 	"Set the mode of the supplied file using chmod()."
 
@@ -501,7 +482,7 @@ FileAttributesPlugin >> primitiveChangeMode [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveChangeOwner [
 	"Set the owner of the supplied file using chown()."
 
@@ -530,7 +511,7 @@ FileAttributesPlugin >> primitiveChangeOwner [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveClosedir [
 	"Close the directory stream for dirPointerOop. Answer dirPointerOop on success.
 	Raise PrimErrBadArgument if the parameter is not a ByteArray length size(void *).
@@ -559,7 +540,7 @@ FileAttributesPlugin >> primitiveClosedir [
 	interpreterProxy methodReturnValue: dirPointerOop
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveFileAttribute [
 	"Answer a single file attribute.
 	primFileAttributes: aString attributeNumber: attributeNumber
@@ -596,7 +577,7 @@ FileAttributesPlugin >> primitiveFileAttribute [
 		ifFalse: [interpreterProxy methodReturnValue: resultOop]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveFileAttributes [
 	"Answer an array of file attributes.
 	primFileAttributes: aString mask: attributeMask
@@ -630,7 +611,7 @@ FileAttributesPlugin >> primitiveFileAttributes [
 	^interpreterProxy methodReturnValue: resultOop
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveFileExists [
 	"Check for existence of a file with a call to access(), or the appropriate platform function."
 
@@ -648,7 +629,7 @@ FileAttributesPlugin >> primitiveFileExists [
 		[^interpreterProxy methodReturnBool: (self faExists: (self addressOf: faPath))]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveFileMasks [
 	"Answer an array of well known file masks"
 
@@ -693,7 +674,7 @@ FileAttributesPlugin >> primitiveFileMasks [
 	interpreterProxy pop: 1 thenPush: masks
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveLogicalDrives [
 	"Answer the logical drive mask on windows"
 
@@ -709,7 +690,7 @@ FileAttributesPlugin >> primitiveLogicalDrives [
 	interpreterProxy primitiveFail
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveOpendir [
 	"Open the supplied directory and answer the first entry and directory pointer.
 	If the directory is empty, answer nil as the first entry.
@@ -761,7 +742,7 @@ FileAttributesPlugin >> primitiveOpendir [
 		methodReturnValue: resultOop.
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitivePathMax [
 	"Answer the value of FA_PATH_MAX (PATH_MAX) for the current VM"
 
@@ -769,7 +750,7 @@ FileAttributesPlugin >> primitivePathMax [
 	^interpreterProxy methodReturnInteger: self faPathMax
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitivePlatToStPath [
 	"Convert the supplied file name (platform encoded) to the St UTF8 encoded byte array"
 
@@ -801,7 +782,7 @@ FileAttributesPlugin >> primitivePlatToStPath [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveReaddir [
 	"Get the next entry in the directory stream. Answer the name of the entry, or
 	nil for the end of the directory stream.
@@ -833,7 +814,7 @@ FileAttributesPlugin >> primitiveReaddir [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveRewinddir [
 	"Set directoryStream to first entry. Answer dirPointerOop."
 
@@ -860,7 +841,7 @@ FileAttributesPlugin >> primitiveRewinddir [
 	^interpreterProxy methodReturnValue: resultOop.
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveStToPlatPath [
 	"Convert the supplied file name (UTF8 encoded) to the platform encoded byte array"
 
@@ -892,7 +873,7 @@ FileAttributesPlugin >> primitiveStToPlatPath [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveSymlinkChangeOwner [
 	"Set the owner of the supplied file using chown()."
 
@@ -920,7 +901,7 @@ FileAttributesPlugin >> primitiveSymlinkChangeOwner [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FileAttributesPlugin >> primitiveVersionString [
 	"Answer a string containing the version string for this plugin."
 
@@ -929,7 +910,7 @@ FileAttributesPlugin >> primitiveVersionString [
 
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPlugin >> processDirectory: faPath [
 	"The supplied faPath contains the full path to the current entry while iterating over a directory.
 	Convert the file name to an object, get the attributes and answer the resulting array."
@@ -961,7 +942,7 @@ FileAttributesPlugin >> processDirectory: faPath [
 	^resultArray
 ]
 
-{ #category : #'private - file' }
+{ #category : 'private - file' }
 FileAttributesPlugin >> readLink: cPathName into: cLinkPtr maxLength: maxLength [
 	"Get the target filename of the supplied symbolic link."
 
@@ -982,7 +963,7 @@ FileAttributesPlugin >> readLink: cPathName into: cLinkPtr maxLength: maxLength 
 	^len
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPlugin >> sizeOfFaPath [
 	"Answer the size of fapath"
 
@@ -990,7 +971,7 @@ FileAttributesPlugin >> sizeOfFaPath [
 			inSmalltalk: [6].
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPlugin >> sizeOfFaPathPtr [
 	"Answer the size of fapathptr.
 	The simulation uses a two element array."
@@ -999,21 +980,21 @@ FileAttributesPlugin >> sizeOfFaPathPtr [
 			inSmalltalk: [2].
 ]
 
-{ #category : #'private - directory' }
+{ #category : 'private - directory' }
 FileAttributesPlugin >> sizeOfPointer [
 	"Size of a C pointer on this machine"
 	<inline: #always>
 	^self sizeof: #'void *'
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> statFailed [
 	"A call to stat() failed"
 	<inline: #always>
 	^-2
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPlugin >> stringFromCString: aCString [
 	"Answer a new String copied from a null-terminated C string.
 	Caution: This may invoke the garbage collector."
@@ -1032,14 +1013,14 @@ FileAttributesPlugin >> stringFromCString: aCString [
 
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> stringTooLong [
 	"String too long.  A file path name was longer than PATH_MAX"
 	<inline: #always>
 	^-1
 ]
 
-{ #category : #'private - directory' }
+{ #category : 'private - directory' }
 FileAttributesPlugin >> structFromObject: anObject size: structSize [
 	"Allocate memory of the requiested size and copy the contents of anObject in to it.
 	anObject is expected to be bytes, e.g. ByteArray or String.
@@ -1063,34 +1044,34 @@ FileAttributesPlugin >> structFromObject: anObject size: structSize [
 	^buffer
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> timeConversionFailed [
 	<inline: #always>
 	^-5
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> unableToCloseDir [
 	"The call to closedir() failed"
 	<inline: #always>
 	^-12
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> unexpectedError [
 	"This is normally used where a catch-all is placed, but not expected to be used"
 	<inline: #always>
 	^-14
 ]
 
-{ #category : #'errors / status' }
+{ #category : 'errors / status' }
 FileAttributesPlugin >> unsupportedOperation [
 	"The requested operation is not supported on the current platform"
 	<inline: #always>
 	^-13
 ]
 
-{ #category : #'version string' }
+{ #category : 'version string' }
 FileAttributesPlugin >> versionString [
 	"Answer a string containing the version string for this plugin."
 	<inline: #always>

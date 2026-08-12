@@ -1,1 +1,1 @@
-Package { #name : #Printf }
+Package { #name : 'Printf' }

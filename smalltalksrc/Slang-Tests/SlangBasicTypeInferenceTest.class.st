@@ -1,30 +1,3 @@
-"
-Basic tests for the type inference used in CCodeGenerator.
-Support methods are in SlangTypeInferenceTestClass.
-There is only one possible type by node, no ambiguities.
-
-1 Constant
-	test constantNode in a method.
-	tests are tailor made for the current TConstantNode >> #typeOrNilFrom:in:.
-
-2 Return-constant
-	test return a constant node in a method.
-	uses the previous categorie's values.
-
-3 Return-temp-assigned-constant
-	assign a temporary node with a constant
-	then returns the temporary variable in the next statement.
-	
-4 Return-temp-assigned-message
-	assign a temporary node with a message
-	then returns the temporary variable in the next statement.
-	
-5 Return-explicit-temp
-	returns a temporary typed by a pragma #var:type:.
-
-6 Return-explicit-arg
-	returns an argument typed by a pragma #var:type:.
-"
 Class {
 	#name : 'SlangBasicTypeInferenceTest',
 	#superclass : 'SlangAbstractTestCase',

@@ -1,6 +1,3 @@
-"
-A test plugin to exercise imbalanced stack access.
-"
 Class {
 	#name : 'BrokenPlugin',
 	#superclass : 'InterpreterPlugin',

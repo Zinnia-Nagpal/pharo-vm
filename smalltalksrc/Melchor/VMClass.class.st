@@ -1,6 +1,3 @@
-"
-I am an abstract superclass for all classes in the VM that want to maintain a source timeStamp.  I am also the holder of the InitializationOptions class variable which holds options such as which JIT or which memory manager to use when creating or generating a VM.
-"
 Class {
 	#name : 'VMClass',
 	#superclass : 'SlangClass',
@@ -596,16 +593,15 @@ VMClass >> fprintf: aStream _: format _: aValue _: otherValue [
 ]
 
 { #category : 'file primitives' }
-VMClass >> fprintf: aStream format: aFormat arguments: arguments [
+VMClass >> fprintf: arg1 format: arg2 arguments: arg3 [
 
 	<doNotGenerate>
-	| printf |
-	printf := PrintfFormatString new setFormat: aFormat.
-	
-	(ZnNewLineWriterStream on: aStream)	
-		nextPutAll: (printf
-			 printf: arguments;
-			 string);
+	| tmp1 tmp3 |
+	tmp1 := PrintfFormatString new setFormat: arg2.
+	tmp3 := ZnNewLineWriterStream on: arg1.
+	tmp1 printf: arg3.
+	tmp3
+		nextPutAll: tmp1 string;
 		flush
 ]
 

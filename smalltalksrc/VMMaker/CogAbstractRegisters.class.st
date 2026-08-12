@@ -1,6 +1,3 @@
-"
-I am a pool for the abstract register set that the Cogit uses to define its model of Smalltalk compiled to machine code.
-"
 Class {
 	#name : 'CogAbstractRegisters',
 	#superclass : 'SharedPool',

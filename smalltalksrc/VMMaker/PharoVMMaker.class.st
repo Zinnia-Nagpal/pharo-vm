@@ -1,6 +1,3 @@
-"
-Main entry point to generate the VM code from the command line.
-"
 Class {
 	#name : 'PharoVMMaker',
 	#superclass : 'Object',

@@ -1,6 +1,6 @@
-Extension { #name : #SmalltalkImage }
+Extension { #name : 'SmalltalkImage' }
 
-{ #category : #'*VMMakerLoadingDependencies' }
+{ #category : '*VMMakerLoadingDependencies' }
 SmalltalkImage >> endianness [
 	"Pluralitas non est ponenda sine necessitate..."
 	^EndianDetector endianness

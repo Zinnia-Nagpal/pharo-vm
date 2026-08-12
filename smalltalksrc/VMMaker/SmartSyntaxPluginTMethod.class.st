@@ -1,8 +1,3 @@
-"
-Variation of TMethod node of the Smalltalk C Code Generator, used in conjunction with SmartSyntaxPluginCodeGenerator and SmartSyntaxInterpreterPlugin to generate named primitives from methods containing type coercion specifications such as
-	primitive: functionName parameters: #(Boolean Oop String WordsArray WordsOrBytes)
-	primitive: functionName parameters: #(SmallInteger LargeNegativeInteger LargePositiveInteger Integer Unsigned) receiver: #Oop
-"
 Class {
 	#name : 'SmartSyntaxPluginTMethod',
 	#superclass : 'TMethod',

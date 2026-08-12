@@ -1,7 +1,3 @@
-"
-I am used to simulate accesses to the methodCache so it can live partly in memory, partly in a Smalltalk Array.  This is necessary because in simulation function pointers are Smalltalk symbols (under simulation primitive dispatch is done via perform:).
-
-"
 Class {
 	#name : 'CMethodCacheAccessor',
 	#superclass : 'CArrayOfLongsAccessor',

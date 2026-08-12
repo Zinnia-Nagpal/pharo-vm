@@ -1,6 +1,6 @@
-Extension { #name : #Collection }
+Extension { #name : 'Collection' }
 
-{ #category : #'*printf' }
+{ #category : '*printf' }
 Collection >> asArgumentArrayForFormatString [
 
 	^self

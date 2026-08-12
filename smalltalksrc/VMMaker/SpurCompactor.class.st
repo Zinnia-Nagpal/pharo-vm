@@ -1,23 +1,3 @@
-"
-Abstract common superclass of all compactors to define apis and simulation variables.
-
-The full GC in Spur is split in two, the marking phase and the compactor phase. The subclasses of SpurCompactor are implementations of the second phase, so they are called once the marking phase is finished. SpurCompactor is reponsible for:
-- freeing unmarked objects
-- compacting the live old space objects (though each subclass define what it does, some spurCompactor may not compact)
-- unmarking all objects remaining live
-- updating oops directly referred by the VM when they are moved (remapObj:/shouldRemapObj: thingy)
-
-The main apis are the following:
-- biasForGC/biasForSnapshot: tells the compactor if the GC is performed for snapshots or not, in general we want to compact more aggressively for snapshots to avoid saving large files with many unused space.
-- compact: main API, should free the unmarked object, unmark the objects remaining live and potentially compact the heap
-- remapObj:/shouldRemapObj: => Not really sure what this does, it seems it has to do with updating oops directly referred by the VM when they are moved. 
-- postSwizzleAction: if you want to do something at start-up after swizzle phase (typically useful if your compaction algo uses segInfos)
-
-Instance Variables
-	coInterpreter:				<StackInterpreter>
-	scavenger:					<SpurGenerationScavenger>
-	manager:					<SpurMemoryManager>
-"
 Class {
 	#name : 'SpurCompactor',
 	#superclass : 'VMClass',

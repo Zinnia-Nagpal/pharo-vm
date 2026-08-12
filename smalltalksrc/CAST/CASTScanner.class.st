@@ -1,6 +1,3 @@
-"
-I am a GLR based C scanner.
-"
 Class {
 	#name : 'CASTScanner',
 	#superclass : 'SmaCCScanner',

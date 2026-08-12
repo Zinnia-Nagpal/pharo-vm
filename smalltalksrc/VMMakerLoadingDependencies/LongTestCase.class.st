@@ -1,16 +1,14 @@
-"
-A LongTestCase is a TestCase that usually takes a long time to run. Because of this users can decide if they want to execute these or not, by changing the ""Run long test cases"" preference.
-"
 Class {
-	#name : #LongTestCase,
-	#superclass : #TestCase,
+	#name : 'LongTestCase',
+	#superclass : 'TestCase',
 	#classVars : [
 		'ShouldRun'
 	],
-	#category : #VMMakerLoadingDependencies
+	#category : 'VMMakerLoadingDependencies',
+	#package : 'VMMakerLoadingDependencies'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LongTestCase class >> allTestSelectors [
 
 	self shouldRun ifTrue: [
@@ -18,20 +16,20 @@ LongTestCase class >> allTestSelectors [
 	^#().
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 LongTestCase class >> buildSuite [
 
 	self shouldRun ifTrue: [ ^super buildSuite ].
 	^self suiteClass new
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LongTestCase class >> doNotRunLongTestCases [
 
 	self shouldRun: false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 LongTestCase class >> isAbstract [
 	"Override to true if a TestCase subclass is Abstract and should not have
 	TestCase instances built from it"
@@ -40,13 +38,13 @@ LongTestCase class >> isAbstract [
 			
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LongTestCase class >> runLongTestCases [
 
 	self shouldRun: true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LongTestCase class >> shouldRun [
 
 	<preference: 'Run long test cases'
@@ -56,13 +54,13 @@ LongTestCase class >> shouldRun [
 	^ShouldRun ifNil: [ true ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LongTestCase class >> shouldRun: aBoolean [
 
 	ShouldRun := aBoolean
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 LongTestCase >> defaultTimeout [
 	"Answer the default timeout to use for tests in this test case. The timeout is a value in seconds."
 

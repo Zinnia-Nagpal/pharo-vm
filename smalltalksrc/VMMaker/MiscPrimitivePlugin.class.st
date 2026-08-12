@@ -1,6 +1,3 @@
-"
-This plugin pulls together a number of string and array related primitives.  In the olden days these primitives were generated as ""translated primitives"", which generated the primitive versions form methods in the image.  In 2018 they were rewritten to use conventional Slang.
-"
 Class {
 	#name : 'MiscPrimitivePlugin',
 	#superclass : 'InterpreterPlugin',

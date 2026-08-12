@@ -1,9 +1,3 @@
-"
-SpurSweeper is a sweep-only algorithm, setting the compactor to SpurSweeper effectively changes the fullGC to a mark-sweep non-moving algorithm. 
-
-SpurSweeper is a reference implementation if one wants to evaluate GC performance and compare it to a Mark-Sweep. It's also the only non-moving GC available right now which can be convenient for some experiments. One of the main reason why it was implemented is because advanced compaction algorithm includes a sweep phase (See SelectiveCompactor for example) and SpurSweeper allows to debug the sweep phase separatedly.
-
-"
 Class {
 	#name : 'SpurSweeper',
 	#superclass : 'SpurCompactor',
