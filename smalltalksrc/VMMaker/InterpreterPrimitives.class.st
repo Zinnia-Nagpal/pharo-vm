@@ -606,6 +606,7 @@ InterpreterPrimitives >> primitiveAdd [
    	self cCode: 'printf("f() returned %ld\n", (long)f())'
    		inSmalltalk: [ Transcript showCr: 'f() returned ', ExtraVMClass f printString ].
    	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
+
 ]
 
 { #category : 'arithmetic largeint primitives' }
@@ -614,7 +615,9 @@ InterpreterPrimitives >> primitiveAddLargeIntegers [
 	| a b result oopResult aIsNegative bIsNegative resultIsNegative oopArg oopRcvr |
 	<export: true>
 	<var: 'a' type: 'usqLong'>
-	<var: 'b' type: 'usqLong'>
+self cCode: 'printf("f() returned %ld\n", (long)f())'
+                inSmalltalk: [ Transcript showCr: 'f() returned ', ExtraVMClass f printString ].
+        self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)	<var: 'b' type: 'usqLong'>
 	<var: 'result' type: 'usqLong'>
 
 	oopArg := self stackValue: 0.
