@@ -67,48 +67,50 @@ JPEGReadWriter2Plugin >> isValidErrorMessageStruct: aByteArray [
 ]
 
 { #category : 'primitives' }
-JPEGReadWriter2Plugin >> primImageHeight: aJPEGDecompressStruct [
+JPEGReadWriter2Plugin >> primImageHeight: arg1 [
+
 	<export: true>
-	self primitive: 'primImageHeight' parameters: #(ByteArray).
-
-	"Various parameter checks"
-	(self isValidDecompressionStruct: aJPEGDecompressStruct) ifFalse:
-		[^interpreterProxy primitiveFail].
-
-	^(self
-		cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_height'
-		inSmalltalk: [JPEGReadWriter2 new primImageHeight: aJPEGDecompressStruct asByteArray])
-			asOop: SmallInteger
+	self primitive: 'primImageHeight' parameters: #( #ByteArray ).
+	(self isValidDecompressionStruct: arg1) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	^ (self
+		   cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_height'
+		   inSmalltalk: [
+				   ('<an unprintable nonliteral value>'
+					    runtimeUndeclaredReadInContext: thisContext) new
+					   primImageHeight: arg1 asByteArray ]) asOop: SmallInteger
 ]
 
 { #category : 'primitives' }
-JPEGReadWriter2Plugin >> primImageNumComponents: aJPEGDecompressStruct [
+JPEGReadWriter2Plugin >> primImageNumComponents: arg1 [
+
 	<export: true>
-	self primitive: 'primImageNumComponents' parameters: #(ByteArray).
-
-	"Various parameter checks"
-	(self isValidDecompressionStruct: aJPEGDecompressStruct) ifFalse:
-		[^interpreterProxy primitiveFail].
-
-	^(self
-		cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->num_components'
-		inSmalltalk: [JPEGReadWriter2 new primImageNumComponents: aJPEGDecompressStruct asByteArray])
-			asOop: SmallInteger
+	self primitive: 'primImageNumComponents' parameters: #( #ByteArray ).
+	(self isValidDecompressionStruct: arg1) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	^ (self
+		   cCode:
+		   '((j_decompress_ptr)aJPEGDecompressStruct)->num_components'
+		   inSmalltalk: [
+				   ('<an unprintable nonliteral value>'
+					    runtimeUndeclaredReadInContext: thisContext) new
+					   primImageNumComponents: arg1 asByteArray ]) asOop:
+		  SmallInteger
 ]
 
 { #category : 'primitives' }
-JPEGReadWriter2Plugin >> primImageWidth: aJPEGDecompressStruct [
+JPEGReadWriter2Plugin >> primImageWidth: arg1 [
+
 	<export: true>
-	self primitive: 'primImageWidth' parameters: #(ByteArray).
-
-	"Various parameter checks"
-	(self isValidDecompressionStruct: aJPEGDecompressStruct) ifFalse:
-		[^interpreterProxy primitiveFail].
-
-	^(self
-		cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_width'
-		inSmalltalk: [JPEGReadWriter2 new primImageWidth: aJPEGDecompressStruct asByteArray])
-			asOop: SmallInteger
+	self primitive: 'primImageWidth' parameters: #( #ByteArray ).
+	(self isValidDecompressionStruct: arg1) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	^ (self
+		   cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_width'
+		   inSmalltalk: [
+				   ('<an unprintable nonliteral value>'
+					    runtimeUndeclaredReadInContext: thisContext) new
+					   primImageWidth: arg1 asByteArray ]) asOop: SmallInteger
 ]
 
 { #category : 'primitives' }
