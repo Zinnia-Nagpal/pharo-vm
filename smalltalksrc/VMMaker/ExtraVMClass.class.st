@@ -14,6 +14,7 @@ ExtraVMClass class >> apiExportHeaderName [
 
 { #category : 'accessing - structure variables' }
 ExtraVMClass class >> f [
+	<api>
 	^ 42
 ]
 
