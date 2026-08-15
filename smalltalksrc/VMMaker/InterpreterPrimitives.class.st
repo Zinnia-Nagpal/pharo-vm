@@ -603,10 +603,8 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 
 { #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
-   	self cCode: 'printf("f() returned %ld\n", (long)f())'
-   		inSmalltalk: [ Transcript showCr: 'f() returned ', ExtraVMClass f printString ].
-   	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
-
+	self cCode: 'printf("f() returned %ld\n", (long)f())'.
+	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
 ]
 
 { #category : 'arithmetic largeint primitives' }
