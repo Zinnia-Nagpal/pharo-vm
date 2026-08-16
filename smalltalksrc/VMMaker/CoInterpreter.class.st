@@ -62,8 +62,7 @@ CoInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^ super ancilliaryClasses , {
 		  CogMethod.
-		  CogPrimitiveDescriptor.
-		  ExtraVMClass }
+		  CogPrimitiveDescriptor }
 	  , (Cogit ancilliaryClasses select: [ :class |
 			   class inheritsFrom: CogMethod ])
 ]
