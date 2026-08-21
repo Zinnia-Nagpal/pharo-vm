@@ -107,6 +107,13 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	^ true
 ]
 
+{ #category : 'tests' }
+SlangBasicTranslationTest >> testAncilliaryClassesDoesNotIncludeExtraVMClass [
+	"ExtraVMClass gets its own dedicated file via generateExtraFile.
+	 It must NOT be in ancilliaryClasses, or f() gets duplicated into cointerp.c too."
+	self deny: (CoInterpreter ancilliaryClasses includes: ExtraVMClass)
+]
+
 { #category : 'tests-method' }
 SlangBasicTranslationTest >> testApiMethodsWithConflictingName [
 	
@@ -1204,6 +1211,29 @@ methodCallingCFunction(void)
 	function(methodWithInlinePragma());
 	return 0;
 }'
+]
+
+{ #category : 'tests' }
+SlangBasicTranslationTest >> testExtraFileContainsFFunction [
+	| outputDir maker extraContent |
+	outputDir := FileLocator temp asFileReference / 'test-vm-gen'.
+	outputDir ensureCreateDirectory.
+	maker := PharoVMMaker on: CoInterpreter outputDirectory: outputDir fullName.
+	maker generateExtraFile.
+	extraContent := (outputDir / 'generated' / '64' / 'vm' / 'src' / 'extra.c') contents.
+	self assert: (extraContent includesSubstring: 'f(void)').
+	outputDir deleteAll.
+]
+
+{ #category : 'tests' }
+SlangBasicTranslationTest >> testExtraFileIsGenerated [
+	| outputDir maker |
+	outputDir := FileLocator temp asFileReference / 'test-vm-gen'.
+	outputDir ensureCreateDirectory.
+	maker := PharoVMMaker on: CoInterpreter outputDirectory: outputDir fullName.
+	maker generateExtraFile.
+	self assert: (outputDir / 'generated' / '64' / 'vm' / 'src' / 'extra.c') exists.
+	outputDir deleteAll.
 ]
 
 { #category : 'tests-goto' }
