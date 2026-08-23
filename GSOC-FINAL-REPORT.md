@@ -1,8 +1,11 @@
 # GSoC 2026 Final Report: Enhance Slang with Separate Compilation
 
 **Student:** Zinnia Nagpal
+
 **Mentor:** Nahuel Palumbo
+
 **Organization:** Pharo
+
 **Project:** Enhance Slang with Separate Compilation
 
 ---
