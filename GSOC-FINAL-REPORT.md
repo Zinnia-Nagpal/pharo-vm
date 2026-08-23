@@ -332,14 +332,17 @@ why each one failed, and how to verify the generated output  is at:
 
 **Key commits on `extra-file`** (for a quicker path through the history than
 scrolling the full branch):
-- [`fce71e873`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/fce71e873) — Initial `ExtraVMClass` and `extra.c` file created
-- [`fc780d8cf`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/fc780d8cf) — Added `extra.c` to the cmake build
-- [`774b09332`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/774b09332) — Generated `extra.h` and includes
-- [`62f899c5f`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/62f899c5f) — Added `ExtraVMClass` to `ancilliaryClasses` (later found to be wrong — see Challenges)
-- [`4fe76d901`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/4fe76d901) — Removed instance-side `f` to fix a duplicate C symbol
-- [`cab3daaf9`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/cab3daaf9) — Final working approach: call `f()` directly, no `new`, no class-side method
-- [`37ff92da4`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/37ff92da4) — Final correction: removed `ExtraVMClass` from `ancilliaryClasses`
-- [`34088f284`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/34088f284) — Added tests
+* [`76367332c`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/76367332c) — primitiveAdd calling f() from extra.c
+* [`37ff92da4`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/37ff92da4) — Fix ancilliaryClasses to avoid duplicate symbol
+* [`34088f284`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/34088f284) — Add tests for separate compilation
+* [`381237608`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/381237608) — Add documentation
+
+**Key commits on `separate-compilation` branch (earlier work):**
+* [`b68df9e11`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/b68df9e11) — Add extra.c to cmake build
+* [`cc0899098`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/cc0899098) — Generate extra.c and extra.h from CCodeGenerator
+* [`436dc523b`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/436dc523b) — Add #include extra.h to generated cointerp.c header
+* [`2b68ebe22`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/2b68ebe22) — Add ExtraVMClass with sourceFileName and f method
+* [`f1e853566`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/f1e853566) — Add generateExtraFile to VMMaker
 
 Earlier draft attempts at this same proof of concept exist on
 `separate-compilation`, `separate-compilation-v2`, and
