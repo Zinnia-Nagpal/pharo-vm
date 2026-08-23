@@ -133,7 +133,7 @@ aCCodeGenerator
 ```
 
 Without this, the compiler fails with `implicit declaration of function 'f'`
-even though `extra.h` correctly declares it — nothing was including it.
+even though `extra.h` correctly declares it  nothing was including it.
 
 #### e) Added `extra.c` to the cmake build
 
@@ -188,7 +188,7 @@ All three pass and call `generateExtraFile` directly rather than doing a
 full VM generation, which also avoids an unrelated pre-existing bug
 described below.
 
-Two further tests were attempted but not completed — see "What's Left."
+Two further tests were attempted but not completed  see "What's Left."
 
 ---
 
@@ -228,7 +228,7 @@ Two further tests were attempted but not completed — see "What's Left."
      reference another file's output.
    - Whether a class should go into `ancilliaryClasses` or get its own
      dedicated file (via a `generate<Name>File` method) is a manual,
-     easy-to-get-wrong decision — choosing wrong produces a linker error
+     easy-to-get-wrong decision choosing wrong produces a linker error
      (`multiple definition`) rather than a clear diagnostic.
 
    A full implementation would derive these `#include` dependencies
@@ -236,8 +236,8 @@ Two further tests were attempted but not completed — see "What's Left."
    methods actually reference.
 
 3. **No real subsystem has been extracted yet.** The next concrete step per
-   the original project proposal — extracting `SpurMemoryManager` (the GC)
-   into its own file using this pattern — was not attempted within the
+   the original project proposal  extracting `SpurMemoryManager` (the GC)
+   into its own file using this pattern  was not attempted within the
    program timeline.
 
 ---
@@ -249,7 +249,7 @@ Two further tests were attempted but not completed — see "What's Left."
 - The `ExtraVMClass` proof of concept and its documentation are **not**
   intended to be merged upstream as-is. `ExtraVMClass` is a deliberately
   artificial, minimal example built to isolate and understand the
-  translation mechanics — not real VM functionality. Its value is the
+  translation mechanics  not real VM functionality. Its value is the
   documented pattern and findings below, intended to inform a properly
   scoped future implementation of separate compilation.
 
@@ -283,8 +283,8 @@ how `buildDirectory` was originally configured.
 
 ## Documentation
 
-A full write-up of the working pattern — including every wrong turn taken,
-why each one failed, and how to verify the generated output — is at:
+A full write-up of the working pattern  including every wrong turn taken,
+why each one failed, and how to verify the generated output  is at:
 
 [`doc/how-to-generate-extra-c-file.md`](https://github.com/Zinnia-Nagpal/pharo-vm/blob/extra-file/doc/how-to-generate-extra-c-file.md)
 
@@ -294,23 +294,23 @@ why each one failed, and how to verify the generated output — is at:
 
 - **The gap between "compiles" and "generates correct C" is easy to miss.**
   Several of the mistakes made along the way — a duplicate C symbol, a
-  silently empty `extra.c` — produced no Smalltalk-level error at all. The
+  silently empty `extra.c`  produced no Smalltalk-level error at all. The
   mistake only surfaced as a C compiler/linker failure, or as a completely
   silent omission with no error whatsoever. This reinforced my mentor's
   advice to check the actual generated C output at every step, not just
   whether the Smalltalk side compiles cleanly.
 - **Several plausible approaches to calling a function in a separately
   generated file turned out to be wrong, each for a different reason:**
-  - `ExtraVMClass new f` doesn't translate — Slang doesn't support `new` for
+  - `ExtraVMClass new f` doesn't translate  Slang doesn't support `new` for
     ancillary classes.
   - A class-side method, called via `ExtraVMClass f`, works right up until
-    the class is *also* listed in `ancilliaryClasses` — then it's translated
+    the class is *also* listed in `ancilliaryClasses` then it's translated
     twice, causing a duplicate-symbol linker error.
   - Even after fixing that, a class-side method with no `<api>` pragma got
     silently eliminated as unreachable dead code.
-  - The eventual, correct approach — an instance-side method with `<api>`,
+  - The eventual, correct approach  an instance-side method with `<api>`,
     **not** listed in `ancilliaryClasses`, called directly as a global C
-    function — was the simplest of everything tried.
+    function  was the simplest of everything tried.
 - **Git/Iceberg workflow across two environments (a Windows Pharo image and
   a WSL build) needs discipline.** Work was lost more than once from
   hand-editing generated `.st` files directly in a text editor to resolve
