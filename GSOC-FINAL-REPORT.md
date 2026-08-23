@@ -11,8 +11,8 @@
 
 The Pharo VM is written in Slang, a subset of Smalltalk that is transpiled to C
 by the `CCodeGenerator`. Before this project, the entire VM was generated into
-a handful of large monolithic C files — `cointerp.c` alone exceeds 94,000
-lines — making the codebase difficult to navigate, maintain, and incrementally
+a handful of large monolithic C files `cointerp.c` alone exceeds 94,000
+lines  making the codebase difficult to navigate, maintain, and incrementally
 recompile.
 
 This project set out to introduce **separate compilation** to Slang:
