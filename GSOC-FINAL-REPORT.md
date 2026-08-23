@@ -269,9 +269,9 @@ cmake --build buildDirectory --target install
 
 # Run the tests (from inside a Pharo image loaded with this VMMaker package)
 # In a Playground:
-#   (SlangBasicTranslationTest selector: #testExtraFileIsGenerated) run.
-#   (SlangBasicTranslationTest selector: #testExtraFileContainsFFunction) run.
-#   (SlangBasicTranslationTest selector: #testAncilliaryClassesDoesNotIncludeExtraVMClass) run.
+   (SlangBasicTranslationTest selector: #testExtraFileIsGenerated) run.
+  (SlangBasicTranslationTest selector: #testExtraFileContainsFFunction) run.
+  (SlangBasicTranslationTest selector: #testAncilliaryClassesDoesNotIncludeExtraVMClass) run.
 ```
 
 A full VM run against a test image (`eval "1+1"`, confirmed to print
