@@ -342,8 +342,6 @@ why each one failed, and how to verify the generated output — is at:
 
 ## Key Links
 
-## Key Links
-
 - Fork: <https://github.com/Zinnia-Nagpal/pharo-vm>
 - Separate compilation proof of concept (full history): <https://github.com/Zinnia-Nagpal/pharo-vm/tree/extra-file>
 - Documentation: <https://github.com/Zinnia-Nagpal/pharo-vm/blob/extra-file/doc/how-to-generate-extra-c-file.md>
