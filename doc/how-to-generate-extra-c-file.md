@@ -43,7 +43,7 @@ ExtraVMClass class >> apiExportHeaderName [
 
 ## 3. Define the function as an instance-side method with `<api>`
 
-This is the most important — and least obvious — part.
+This is the most important and least obvious  part.
 
 ```smalltalk
 ExtraVMClass >> f [
@@ -56,11 +56,11 @@ Two things matter here:
 
 - **It must be instance-side, not class-side.** Slang's ancillary-class handling
   expects instance-side methods for functions meant to be linked/called this way.
-  (We initially tried a class-side `f`, which superficially seemed to work but
+  (I also tried a class-side `f`, which superficially seemed to work but
   caused problems described below.)
 - **It needs the `<api>` pragma.** Without it, Slang's dead-code elimination
   determined that nothing in the traced call graph "used" `f`, and silently
-  dropped it from the generated output — `extra.c` came out completely empty,
+  dropped it from the generated output  `extra.c` came out completely empty,
   with no error. The `<api>` pragma marks the method as an external entry point,
   forcing it to be kept regardless of whether Slang can trace a caller.
 
@@ -86,12 +86,12 @@ VMMaker >> generateExtraFile [
 This builds a code generator scoped to just `ExtraVMClass`, infers types, prepares
 methods, and writes both the `.c` and `.h` files. Calling `generateExtraFile` alone
 (without doing a full `generate: #CoInterpreter`) is enough to produce `extra.c`
-and `extra.h` — it does **not** require the whole VM to be generated, which is
+and `extra.h`  it does **not** require the whole VM to be generated, which is
 useful for testing this in isolation (see "Testing" below).
 
 ## 5. Make the header visible to the main interpreter file
 
-Having `extra.h` exist on disk isn't enough — the main interpreter file
+Having `extra.h` exist on disk isn't enough  the main interpreter file
 (`gcc3x-cointerp.c`) needs an explicit `#include "extra.h"` to see `f`'s
 declaration. Add this in `CoInterpreter class >> declareCVarsIn:`, alongside the
 existing header includes:
@@ -108,7 +108,7 @@ CoInterpreter class >> declareCVarsIn: aCCodeGenerator [
 ```
 
 Without this, the compiler fails with `implicit declaration of function 'f'`,
-even though `extra.h` correctly declares it — the file just was never
+even though `extra.h` correctly declares it the file just was never
 `#include`d anywhere.
 
 **This manual `addHeaderFile:` step is exactly the gap that automated
@@ -125,14 +125,14 @@ InterpreterPrimitives >> primitiveAdd [
 ]
 ```
 
-`f()` is a plain global C function — call it directly, with no receiver and no
+`f()` is a plain global C function  call it directly, with no receiver and no
 `new`. This is the key insight after several wrong turns (see below).
 
 ## 7. What `ExtraVMClass` must NOT be in
 
 **Do not add `ExtraVMClass` to `CoInterpreter class >> ancilliaryClasses`.**
 
-It's tempting to think this is required — `ancilliaryClasses` is the standard
+It's tempting to think this is required  `ancilliaryClasses` is the standard
 mechanism for telling the interpreter's code generator about extra classes it
 should know about. But `ExtraVMClass` already gets its own, separate translation
 pass via `generateExtraFile` (step 4). If it's *also* listed in
@@ -147,7 +147,7 @@ The rule of thumb: a class either (a) gets its own dedicated file via a
 ## Wrong turns (and why they failed)
 
 These are documented because they're each individually plausible and easy to
-try first — knowing why they fail should save the next person real time.
+try first  knowing why they fail should save the next person real time.
 
 | Attempt | What happened | Why |
 |---|---|---|
