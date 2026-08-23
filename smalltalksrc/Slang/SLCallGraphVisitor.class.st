@@ -1,26 +1,3 @@
-"
-I am a call graph visitor visiting all methods found in a callgraph starting at a particular method.
-Starting from the given method, I recursively look into its called methods.
-For each called method, I call the preVisitMethod: and postVisitMethod: on myself with the method as argument.
-I am an abstract class, my subclasses should redefine preVisitMethod: and postVisitMethod: with concrete implementations.
-
-I implement a depth first algorithm on the callgraph, stopping recursion as soon as a cycle is found.
-Users may redefine the [pre/post]VisitMethod: variants to implement a pre-order or a post-order traversal.
-- preVisitMethod: is called before the recursive call on its children
-- postVisitMethod: is called after the recursive call on its children
-
-preVisitMethod: returns a boolean indicating if the method should be recursively visited or not, as a user-available hook to stop computation
-
-# Usage
-
-- I am created with the #codeGenerator: class side method with a code generator as argument.
-- I am started from a method with the #startFromMethod: message with a TMethod as argument.
-
-# Example
-
-v := SLCallGraphVisitor codeGenerator: generator.
-v startFromMethod: (generator methodNamed: #foo).
-"
 Class {
 	#name : 'SLCallGraphVisitor',
 	#superclass : 'Object',

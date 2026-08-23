@@ -1,6 +1,3 @@
-"
-I am a C GLR Parser
-"
 Class {
 	#name : 'CASTParser',
 	#superclass : 'SmaCCGLRParser',

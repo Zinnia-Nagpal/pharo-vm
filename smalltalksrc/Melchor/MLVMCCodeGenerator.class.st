@@ -140,9 +140,11 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 
 	self pruneUnreachableMethods.
 	interpretMethod := self methodNamed: #interpret.
-	self
-		localizeVariables: self vmClass namesOfVariablesToLocalize
-		inMethod: interpretMethod
+	interpretMethod ifNotNil: [ 
+		self
+			localizeVariables: self vmClass namesOfVariablesToLocalize
+			inMethod: interpretMethod ]
+	
 ]
 
 { #category : 'C code generator' }

@@ -346,28 +346,25 @@ SlangInliningTest >> testCollectStatementsForInliningInMethodWithAvoidedSelector
 { #category : 'inlining-simple' }
 SlangInliningTest >> testInlineInSwitchRemovesReturnStatement [
 
-	| method codeGenerator methodToBeInlined theSwitch firstCaseConstantExpression firstCase firstCaseLabels |
-	method := (Spur64BitMemoryManager lookupSelector:
-		           #numSlotsForShortening:toIndexableSize:)
-		          asTranslationMethodOfClass: TMethod.
-	methodToBeInlined := (Spur64BitMemoryManager lookupSelector:
-		                      #arrayFormat) asTranslationMethodOfClass:
-		                     TMethod.
-
-	codeGenerator := CCodeGeneratorGlobalStructure new.
-	codeGenerator addMethod: method.
-	codeGenerator addMethod: methodToBeInlined.
-	codeGenerator prepareMethods.
-	codeGenerator inferTypes.
-	codeGenerator doInlining: true.
-
-	theSwitch := method parseTree children first expression.
-	firstCase := theSwitch cases first.
-	firstCaseLabels := firstCase first.
-	"The first case should have a single label"
-	self assert: firstCaseLabels size equals: 1.
-	firstCaseConstantExpression := firstCaseLabels first.
-	self assert: firstCaseConstantExpression parent equals: theSwitch
+	| tmp1 tmp2 tmp3 tmp4 tmp5 tmp6 tmp7 |
+	tmp1 := (Spur64BitMemoryManager lookupSelector:
+		         #numSlotsForShortening:toIndexableSize:)
+		        asTranslationMethodOfClass: TMethod.
+	tmp3 := (Spur64BitMemoryManager lookupSelector: #arrayFormat)
+		        asTranslationMethodOfClass: TMethod.
+	tmp2 := CCodeGeneratorGlobalStructure new.
+	tmp2
+		addMethod: tmp1;
+		addMethod: tmp3;
+		prepareMethods;
+		inferTypes;
+		doInlining: true.
+	tmp4 := tmp1 parseTree children first expression.
+	tmp6 := tmp4 cases first.
+	tmp7 := tmp6 first.
+	self assert: tmp7 size equals: 1.
+	tmp5 := tmp7 first.
+	self assert: tmp5 parent equals: tmp4
 ]
 
 { #category : 'inlining-assignment' }

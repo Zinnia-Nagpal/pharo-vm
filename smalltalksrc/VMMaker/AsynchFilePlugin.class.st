@@ -1,6 +1,3 @@
-"
-Implements the asynchronous file primitives available on a few platforms. See the platform specific files in platforms- {your platform} - plugins - Asynchplugin
-"
 Class {
 	#name : 'AsynchFilePlugin',
 	#superclass : 'SmartSyntaxInterpreterPlugin',

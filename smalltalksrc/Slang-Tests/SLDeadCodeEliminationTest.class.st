@@ -14,11 +14,9 @@ SLDeadCodeEliminationTest >> setUp [
 
 	super setUp.
 	ccg addStructClass: SLDeadCodeEliminationTestClass.
-	"necessary to get the type of sqInt"
 	SpurMemoryManager initBytesPerWord: 8.
 	ccg inferTypes.
-	sLDeadCodeElimination := SLDeadCodeElimination new codeGenerator: ccg.
-
+	sLDeadCodeElimination := SLDeadCodeElimination new codeGenerator: ccg
 ]
 
 { #category : 'only-comment' }

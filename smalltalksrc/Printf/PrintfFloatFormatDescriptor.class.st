@@ -1,10 +1,11 @@
 Class {
-	#name : #PrintfFloatFormatDescriptor,
-	#superclass : #PrintfNumberFormatDescriptor,
-	#category : #Printf
+	#name : 'PrintfFloatFormatDescriptor',
+	#superclass : 'PrintfNumberFormatDescriptor',
+	#category : 'Printf',
+	#package : 'Printf'
 }
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfFloatFormatDescriptor >> applyOperator: object [ 
 	"Number is the only valid class"
 
@@ -27,22 +28,22 @@ PrintfFloatFormatDescriptor >> applyOperator: object [
 		ifFalse: [string]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFloatFormatDescriptor >> digits [
 	^ width == 0 ifTrue: [7] ifFalse: [width]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFloatFormatDescriptor >> precision [
 	^ precision isNil ifTrue: [1] ifFalse: [precision]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFloatFormatDescriptor >> stringLength [
 	^ width
 ]
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfFloatFormatDescriptor >> zeroPaddedStringOfBase: base forFloat: aFloat [ 
 	| stream |
 	stream := String new writeStream.

@@ -1,6 +1,3 @@
-"
-Provide access to the host machine file system. Requires both the Cross platform support files from platforms - Cross - plugins - FilePlugin (or some suitable replacement) and the platform specific fils from platforms - {your platform} - plugins - FilePlugin.
-"
 Class {
 	#name : 'FilePlugin',
 	#superclass : 'InterpreterPlugin',

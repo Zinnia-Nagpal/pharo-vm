@@ -30,26 +30,27 @@ VMSpurImageToComposedImageMigrationProcess >> copyChangesFileFromImage: original
 { #category : 'migrate' }
 VMSpurImageToComposedImageMigrationProcess >> createSimulator [
 
-	| environmentBuilder memoryClass |
-	environmentBuilder := VMSimulatedEnvironmentBuilder new.
-	memoryClass := Spur64BitMemoryManager simulatorClass.
-
-	environmentBuilder 
+	| tmp1 tmp2 |
+	tmp1 := VMSimulatedEnvironmentBuilder new.
+	tmp2 := Spur64BitMemoryManager simulatorClass.
+	tmp1
 		interpreterClass: StackInterpreterSimulatorLSB;
-		objectMemoryClass: memoryClass;
-	 	initializationOptions: { 
-			#BytesPerWord. 8.
-			#ObjectMemory. memoryClass name.
-		  	#ImageReader. SpurImageReader name.
-		  	#ImageWriter. ComposedImageWriter name};
+		objectMemoryClass: tmp2;
+		initializationOptions: {
+				#BytesPerWord.
+				8.
+				#ObjectMemory.
+				tmp2 name.
+				#ImageReader.
+				SpurImageReader name.
+				#ImageWriter.
+				ComposedImageWriter name };
 		wordSize: 8;
-		initialCodeSize: 4*1024; 
-		primitiveTraceLogSize: 0.
-
-	environmentBuilder doBuildSimulator.
-
-	interpreter := environmentBuilder interpreter.
-	memory := environmentBuilder objectMemory.
+		initialCodeSize: 4 * 1024;
+		primitiveTraceLogSize: 0;
+		doBuildSimulator.
+	interpreter := tmp1 interpreter.
+	memory := tmp1 objectMemory
 ]
 
 { #category : 'migrate' }

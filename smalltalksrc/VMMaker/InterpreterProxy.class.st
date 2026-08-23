@@ -1,7 +1,3 @@
-"
-This class should provide the definition of what interpreter support plugins need and can have access to. Note that the proxy related files platforms - Cross - vm - sqVirtualMachine.[ch] are kept under the git tree at http://www.github.com/opensmalltalk/vm.
-The main use of the class is to support the vm simulator and the RSqueak VM, which implements as many primitives as possible in Smalltalk.
-"
 Class {
 	#name : 'InterpreterProxy',
 	#superclass : 'Object',

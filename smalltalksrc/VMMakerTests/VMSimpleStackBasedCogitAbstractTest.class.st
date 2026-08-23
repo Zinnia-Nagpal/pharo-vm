@@ -577,14 +577,16 @@ VMSimpleStackBasedCogitAbstractTest >> openMachineDebugger [
 ]
 
 { #category : 'helpers' }
-VMSimpleStackBasedCogitAbstractTest >> openMachineDebuggerAt: anAddress [
-	
-	^ VMMachineCodeDebugger new
+VMSimpleStackBasedCogitAbstractTest >> openMachineDebuggerAt: arg1 [
+
+	| tmp2 |
+	tmp2 := VMMachineCodeDebugger new.
+	tmp2
 		cogit: cogit;
-		abstractInstructions: (self abstractInstructions);
+		abstractInstructions: self abstractInstructions;
 		machineSimulator: machineSimulator;
-		initialInstructionToDisassemble: anAddress;
-		openWithSpec.
+		initialInstructionToDisassemble: arg1.
+	^ tmp2 openWithSpec
 ]
 
 { #category : 'helpers - stack' }

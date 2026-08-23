@@ -1,70 +1,3 @@
-"
-This work is a Squeak VM Plugin version of LibJPEG.
-
-The following sentence applies to this class:
-  ""This software is based in part on the work of the Independent JPEG Group"".
-
-You can read more about it at www.ijg.org
-
-In addition to the code generated from this class, the plugin uses the following files (from LibJPEG ver. 6b):
-
-jerror.c
-jcmarker.c
-jdmarker.c
-jctrans.c
-jcparam.c
-jdapimin.c
-jcapimin.c
-jidctred.c
-jidctflt.c
-jidctfst.c
-jidctint.c
-jccoefct.c
-jdinput.c
-jdmaster.c
-jdcoefct.c
-jdhuff.c
-jdphuff.c
-jcphuff.c
-jchuff.c
-jcomapi.c
-jcinit.c
-jcmaster.c
-jdcolor.c
-jdtrans.c
-jmemmgr.c
-jutils.c
-jddctmgr.c
-jcdctmgr.c
-jquant2.c
-jquant1.c
-jmemnobs.c
-jfdctint.c
-jfdctfst.c
-jfdctflt.c
-jdsample.c
-jdpostct.c
-jdmerge.c
-jdmainct.c
-jdapistd.c
-jcsample.c
-jcprepct.c
-jcmainct.c
-jccolor.c
-jcapistd.c
-jversion.h
-jpeglib.h
-jdhuff.h
-jchuff.h
-jerror.h
-jmorecfg.h
-jmemsys.h
-jpegint.h
-jdct.h
-jinclude.h
-
-
-"
 Class {
 	#name : 'JPEGReadWriter2Plugin',
 	#superclass : 'SmartSyntaxInterpreterPlugin',
@@ -134,48 +67,50 @@ JPEGReadWriter2Plugin >> isValidErrorMessageStruct: aByteArray [
 ]
 
 { #category : 'primitives' }
-JPEGReadWriter2Plugin >> primImageHeight: aJPEGDecompressStruct [
+JPEGReadWriter2Plugin >> primImageHeight: arg1 [
+
 	<export: true>
-	self primitive: 'primImageHeight' parameters: #(ByteArray).
-
-	"Various parameter checks"
-	(self isValidDecompressionStruct: aJPEGDecompressStruct) ifFalse:
-		[^interpreterProxy primitiveFail].
-
-	^(self
-		cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_height'
-		inSmalltalk: [JPEGReadWriter2 new primImageHeight: aJPEGDecompressStruct asByteArray])
-			asOop: SmallInteger
+	self primitive: 'primImageHeight' parameters: #( #ByteArray ).
+	(self isValidDecompressionStruct: arg1) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	^ (self
+		   cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_height'
+		   inSmalltalk: [
+				   ('<an unprintable nonliteral value>'
+					    runtimeUndeclaredReadInContext: thisContext) new
+					   primImageHeight: arg1 asByteArray ]) asOop: SmallInteger
 ]
 
 { #category : 'primitives' }
-JPEGReadWriter2Plugin >> primImageNumComponents: aJPEGDecompressStruct [
+JPEGReadWriter2Plugin >> primImageNumComponents: arg1 [
+
 	<export: true>
-	self primitive: 'primImageNumComponents' parameters: #(ByteArray).
-
-	"Various parameter checks"
-	(self isValidDecompressionStruct: aJPEGDecompressStruct) ifFalse:
-		[^interpreterProxy primitiveFail].
-
-	^(self
-		cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->num_components'
-		inSmalltalk: [JPEGReadWriter2 new primImageNumComponents: aJPEGDecompressStruct asByteArray])
-			asOop: SmallInteger
+	self primitive: 'primImageNumComponents' parameters: #( #ByteArray ).
+	(self isValidDecompressionStruct: arg1) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	^ (self
+		   cCode:
+		   '((j_decompress_ptr)aJPEGDecompressStruct)->num_components'
+		   inSmalltalk: [
+				   ('<an unprintable nonliteral value>'
+					    runtimeUndeclaredReadInContext: thisContext) new
+					   primImageNumComponents: arg1 asByteArray ]) asOop:
+		  SmallInteger
 ]
 
 { #category : 'primitives' }
-JPEGReadWriter2Plugin >> primImageWidth: aJPEGDecompressStruct [
+JPEGReadWriter2Plugin >> primImageWidth: arg1 [
+
 	<export: true>
-	self primitive: 'primImageWidth' parameters: #(ByteArray).
-
-	"Various parameter checks"
-	(self isValidDecompressionStruct: aJPEGDecompressStruct) ifFalse:
-		[^interpreterProxy primitiveFail].
-
-	^(self
-		cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_width'
-		inSmalltalk: [JPEGReadWriter2 new primImageWidth: aJPEGDecompressStruct asByteArray])
-			asOop: SmallInteger
+	self primitive: 'primImageWidth' parameters: #( #ByteArray ).
+	(self isValidDecompressionStruct: arg1) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	^ (self
+		   cCode: '((j_decompress_ptr)aJPEGDecompressStruct)->image_width'
+		   inSmalltalk: [
+				   ('<an unprintable nonliteral value>'
+					    runtimeUndeclaredReadInContext: thisContext) new
+					   primImageWidth: arg1 asByteArray ]) asOop: SmallInteger
 ]
 
 { #category : 'primitives' }

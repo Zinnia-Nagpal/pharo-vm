@@ -1,6 +1,3 @@
-"
-I am a shared pool for the constants that define frame layout shared between the stack interpreters and the cogit.
-"
 Class {
 	#name : 'VMStackFrameOffsets',
 	#superclass : 'SharedPool',

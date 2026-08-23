@@ -1,8 +1,3 @@
-"
-A few tests to explore the ambiguity of a GLR grammar.
-
-
-"
 Class {
 	#name : 'CASTParserTests',
 	#superclass : 'TestCase',

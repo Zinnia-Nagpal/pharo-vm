@@ -1,6 +1,3 @@
-"
-I provide file system access via the new file library.
-"
 Class {
 	#name : 'NewFilePlugin',
 	#superclass : 'InterpreterPlugin',

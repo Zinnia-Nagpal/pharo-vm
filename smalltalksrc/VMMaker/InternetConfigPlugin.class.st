@@ -1,6 +1,3 @@
-"
-This plugin provides access to the Mac's internet configuration toolkit - so long as you are running on a Mac.
-"
 Class {
 	#name : 'InternetConfigPlugin',
 	#superclass : 'SmartSyntaxInterpreterPlugin',

@@ -1,30 +1,6 @@
-"
-FileAttributesPluginSimulator provides support functions to allow the FilePluginsAttribute to run in the VM simulator.
-
-faPath is opaque to the VM, but normally stores:
-
-1. The file path being interagated in the format provided by the image (precomposed UTF8).
-2. The file path in platform specific format, e.g. wide strings for Windows, decomposed UTF8 for Mac.
-3. Platform specific directory iteration information when required, e.g. primOpendir.
-
-The simulator stores an Array with:
-
-1. The session ID
-2. The input path in precomposed UTF8.
-3. The file name when iterating over directories.
-4. The input path with platform specific encoding
-5. The file name when iterating over directories with platform specific encoding
-6. The pointer to the real faPath used by the plugin.
-
-The third and fourth entries (platform specific encoding) are only valid in specific cases, e.g. primitivePlatToStPath and primitiveStToPlatPath.
-
-
-Instance Variables
-
-"
 Class {
-	#name : #FileAttributesPluginSimulator,
-	#superclass : #FileAttributesPlugin,
+	#name : 'FileAttributesPluginSimulator',
+	#superclass : 'FileAttributesPlugin',
 	#instVars : [
 		'maxPathLen'
 	],
@@ -43,16 +19,17 @@ Class {
 		'S_IFREG',
 		'S_IFSOCK'
 	],
-	#category : #FileAttributesPlugin
+	#category : 'FileAttributesPlugin',
+	#package : 'FileAttributesPlugin'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 FileAttributesPluginSimulator class >> shouldBeTranslated [
 "This class should not be translated"
 	^false
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> addressObjectFor: aByteArray [
 	"The simulation passes around ByteArrays in place of malloc'd memory.
 	Copy the supplied ByteArray to the simulations memory and answer the address."
@@ -60,7 +37,7 @@ FileAttributesPluginSimulator >> addressObjectFor: aByteArray [
 	^self toOop: aByteArray
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> arrayFromOop: anOop [
 	"Answer a copy of the supplied array Oop"
 
@@ -73,7 +50,7 @@ FileAttributesPluginSimulator >> arrayFromOop: anOop [
 	^array
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> byteArrayFromOop: anOop [
 	"Answer a copy of the supplied byte array Oop"
 
@@ -87,7 +64,7 @@ FileAttributesPluginSimulator >> byteArrayFromOop: anOop [
 	^array
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> byteStringFromOop: anOop [
 	"Answer a copy of the supplied ByteString Oop"
 
@@ -100,7 +77,7 @@ FileAttributesPluginSimulator >> byteStringFromOop: anOop [
 	^array
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> chmod: pathByteArray _: newMode [
 	"Set the mode of pathByateArray to anInteger (as defined by chmod())"
 
@@ -111,7 +88,7 @@ FileAttributesPluginSimulator >> chmod: pathByteArray _: newMode [
 	^status ifNil: [0]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> chown: pathByteArray _: uidInteger _: gidInteger [
 	"Set the owner and group of path by numeric id."
 
@@ -122,7 +99,7 @@ FileAttributesPluginSimulator >> chown: pathByteArray _: uidInteger _: gidIntege
 	^status ifNil: [0]
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> classOf: anOop [
 
 	| clsOop |
@@ -137,7 +114,7 @@ FileAttributesPluginSimulator >> classOf: anOop [
 	self error: 'unknown class'
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faAccessAttributes: faPath _: accessArray _: offset [
 	"Set the access attributes in the supplied array (size 3) at the supplied offset.
 	Simulated by calling primFileAttributes:mask:."
@@ -158,7 +135,7 @@ FileAttributesPluginSimulator >> faAccessAttributes: faPath _: accessArray _: of
 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faCharToByteArray: filePtr _: byteArrayPtr [
 	"Copy the supplied file name to the simulation and set the pointer"
 
@@ -166,7 +143,7 @@ FileAttributesPluginSimulator >> faCharToByteArray: filePtr _: byteArrayPtr [
 	^0
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faCloseDirectory: faPath [
 	"Simulate the the call by actually calling the primitive and discarding the stat information (which will be retrieved again later in the simulation)."
 
@@ -184,21 +161,21 @@ FileAttributesPluginSimulator >> faCloseDirectory: faPath [
 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faConvertUnixToLongSqueakTime: anInteger [
 	"In the simulation the primitive returns the value already converted, so this is a no-op"
 
 	^anInteger
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faExists: faPath [
 	"Simulate the the call by actually calling the primitive."
 
 	^self primExists: (self faGetStPath: faPath)
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faFileAttribute: faPath _: attributeNumber [
 	"Simulate the the call by actually calling the primitive."
 
@@ -208,7 +185,7 @@ FileAttributesPluginSimulator >> faFileAttribute: faPath _: attributeNumber [
 	^self toOop: result
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faFileStatAttributes: faPath _: getLinkStats _: attributeArray [
 	"Simulate the call to faFileStatAttributes().
 	The simulator uses a dictionary with keys named after the stat structure members."
@@ -229,7 +206,7 @@ FileAttributesPluginSimulator >> faFileStatAttributes: faPath _: getLinkStats _:
 	^0
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faGetPlatPath: faPath [
 	"Answer the Plat format of the path.
 	In the simulation, actually answer the St format, this is required as the real primitive will eventually be called, which requires the St format."
@@ -237,14 +214,14 @@ FileAttributesPluginSimulator >> faGetPlatPath: faPath [
 	^self faGetStPath: faPath
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faGetPlatPathByteCount: faPath [
 	"Answer the number of bytes in the platform specific encoding"
 
 	^(self faGetPlatPath: faPath) size
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faGetPlatformPath: faPath [
 	"Answer the Platform format of the path.
 	This isn't normally used within the simulation as the simulation ultimately calls the actual primitive, which requires the St format of the path."
@@ -260,7 +237,7 @@ FileAttributesPluginSimulator >> faGetPlatformPath: faPath [
 	^path
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faGetStFile: faPath [
 	"Answer the basename of the path.
 	The simulated faPath contains the basename as the third entry in the Array."
@@ -268,7 +245,7 @@ FileAttributesPluginSimulator >> faGetStFile: faPath [
 	^faPath at: 3
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faGetStPath: faPath [
 	"Answer the St format of the path."
 
@@ -280,7 +257,7 @@ FileAttributesPluginSimulator >> faGetStPath: faPath [
 	^path
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faGetStPathLen: faPath [
 	"Answer the length of the path."
 
@@ -288,7 +265,7 @@ FileAttributesPluginSimulator >> faGetStPathLen: faPath [
 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faInitSessionId: faPathPtr [
 	"Set the session id in the supplied pointer"
 
@@ -296,7 +273,7 @@ FileAttributesPluginSimulator >> faInitSessionId: faPathPtr [
 	^self faSuccess
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faInvalidateSessionId: faPathPtr [
 	"Clear the session ID in the faPathPtr, marking it invalid"
 
@@ -304,7 +281,7 @@ FileAttributesPluginSimulator >> faInvalidateSessionId: faPathPtr [
 	^self faSuccess
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faOpenDirectory: faPath [
 	"Simulate the the call by actually calling the primitive and discarding the stat information (which will be retrieved again later in the simulation)."
 
@@ -321,7 +298,7 @@ FileAttributesPluginSimulator >> faOpenDirectory: faPath [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> faPathMax [
 	"Answer the VMs FA_PATH_MAX value"
 
@@ -329,14 +306,14 @@ FileAttributesPluginSimulator >> faPathMax [
 	^self signalError: error for: 'primPathMax'
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faPathPtr: faPath [
 	"Given the simulation faPath, answer the ByteArray pointing to the actual faPath"
 
 	^faPath at: 6
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faReadDirectory: faPath [
 	"Simulate the the call by actually calling the primitive and discarding the stat information (which will be retrieved again later in the simulation)."
 
@@ -351,14 +328,14 @@ FileAttributesPluginSimulator >> faReadDirectory: faPath [
 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faSessionId: faPath [
 	"Answer the session id of the current path"
 	
 	^faPath first
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faSetPlatPathOop: faPath _: fileNameOop [
 	"Simulate setting the platform encoded file name in the supplied faPath."
 
@@ -377,7 +354,7 @@ FileAttributesPluginSimulator >> faSetPlatPathOop: faPath _: fileNameOop [
 		at: 3 put: nil.
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faSetStDirOop: faPath _: dirOop [
 	"Simulate setting the dir name in the supplied faPath."
 
@@ -387,7 +364,7 @@ FileAttributesPluginSimulator >> faSetStDirOop: faPath _: dirOop [
 	faPath at: 3 put: nil.
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faSetStPathOop: faPath _: fileNameOop [
 	"Set the St encoded path."
 
@@ -403,7 +380,7 @@ FileAttributesPluginSimulator >> faSetStPathOop: faPath _: fileNameOop [
 		at: 3 put: nil.
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faStat: faPath _: statBuf _: fileNameOop [
 	"Simulate the call to faStat().
 	The simulator uses a dictionary with keys named after the stat structure members."
@@ -418,21 +395,21 @@ FileAttributesPluginSimulator >> faStat: faPath _: statBuf _: fileNameOop [
 	^0
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faValidatePath: faPath [
 	"The simulation currently doesn't keep track of the sessionId."
 
 	^(self faSessionId: faPath) = interpreterProxy getThisSessionID
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> faValidateSessionId: anInteger [
 	"Answer a boolean indicating whether the supplied session id matches the current one."
 
 	^anInteger = interpreterProxy getThisSessionID
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> fromOop: anOop [
 
 	| cls |
@@ -447,7 +424,7 @@ FileAttributesPluginSimulator >> fromOop: anOop [
 	self error: 'Unknown class'.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 FileAttributesPluginSimulator >> initialize [
 	"Initialise the receiver for the current platform"
 
@@ -470,7 +447,7 @@ FileAttributesPluginSimulator >> initialize [
 	PATH_MAX := FA_PATH_MAX := self primPathMax.
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> largePositiveIntegerFromOop: anOop [
 	"Answer a copy of the supplied large positive integer Oop"
 
@@ -493,7 +470,7 @@ FileAttributesPluginSimulator >> largePositiveIntegerFromOop: anOop [
 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FileAttributesPluginSimulator >> lchown: pathByteArray _: uidInteger _: gidInteger [
 	"Set the symlink owner and group of path by numeric id."
 
@@ -504,28 +481,28 @@ FileAttributesPluginSimulator >> lchown: pathByteArray _: uidInteger _: gidInteg
 	^status ifNil: [0]
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> maxPathLen [
 	"Answer the maximum supported path length for the current platform"
 
 	^maxPathLen ifNil: [maxPathLen := self primPathMax]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPluginSimulator >> objectFromStruct: anObject size: structSize [
 	"Copy the simulation path in to the simulated image"
 
 	^self toOop: anObject
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> pointerFrom: arrayOop [
 	"For the simulation, convert the supplied address to a ByteArray"
 
 	^self fromOop: arrayOop
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primClosedir: directoryPointerBytes [
 	"Close the directory stream associated with directoryPointerBytes.
 	Caution: do not call this twice on the same externalAddress."
@@ -537,7 +514,7 @@ FileAttributesPluginSimulator >> primClosedir: directoryPointerBytes [
 	^self signalError: error for: 'primClosedir'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primExists: aByteArray [
 	"Answer a boolean indicating whether the supplied file exists."
 
@@ -546,7 +523,7 @@ FileAttributesPluginSimulator >> primExists: aByteArray [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primFile: pathByteArray posixPermissions: anInteger [
 	"Set the mode of pathByateArray to anInteger (as defined by chmod())"
 
@@ -554,7 +531,7 @@ FileAttributesPluginSimulator >> primFile: pathByteArray posixPermissions: anInt
 	^self signalError: error for: pathByteArray
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primFile: pathByteArray symlinkUid: uidInteger gid: gidInteger [
 	"Set the owner and group of path by numeric id."
 
@@ -562,7 +539,7 @@ FileAttributesPluginSimulator >> primFile: pathByteArray symlinkUid: uidInteger 
 	^self signalError: error for: pathByteArray
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primFile: pathByteArray uid: uidInteger gid: gidInteger [
 	"Set the owner and group of path by numeric id."
 
@@ -570,7 +547,7 @@ FileAttributesPluginSimulator >> primFile: pathByteArray uid: uidInteger gid: gi
 	^self signalError: error for: pathByteArray
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primFileAttribute: aByteArray number: attributeNumber [
 	"Answer a single attribute for the supplied file.
 	For backward compatibility (on Unix) with FileReference if the file doesn't exist, and the specified path is a (broken) symbolic link, answer the requested attribute for the symbolic link.
@@ -615,7 +592,7 @@ symbolic link information
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primFileAttributes: aByteArray mask: attributeMask [
 	"Answer an array of attributes for the supplied file.  The size and contents of the array are determined by the attributeMask:
 
@@ -650,7 +627,7 @@ access() information
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primFileMasks [
 	"Answer an array of well known masks:
 	
@@ -669,7 +646,7 @@ FileAttributesPluginSimulator >> primFileMasks [
 	^self signalError: error for: 'primFileMasks'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primFromPlatformPath: aByteArray [
 	"Convert the supplied platform encoded string to the native (UTF8) equivalent"
 
@@ -677,7 +654,7 @@ FileAttributesPluginSimulator >> primFromPlatformPath: aByteArray [
 	^self signalError: error for: 'primToPlatformPath:'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primOpendir: pathString [
 	"Answer an ExternalAddress for a directory stream on pathString, or nil if
 	the directory cannot be opened"
@@ -690,7 +667,7 @@ FileAttributesPluginSimulator >> primOpendir: pathString [
 	^self signalError: error for: pathString
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primPathMax [
 	"Answer the maximum path length for this platform"
 
@@ -698,7 +675,7 @@ FileAttributesPluginSimulator >> primPathMax [
 	^self signalError: error for: 'primPathMax'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primReaddir: directoryPointerBytes [
 	"Read the next directory entry from the directory stream associated with
 	directoryPointerBytes. Answer the name of the entry, ornil for end of directory stream."
@@ -710,7 +687,7 @@ FileAttributesPluginSimulator >> primReaddir: directoryPointerBytes [
 	^self signalError: error for: 'primReaddir:'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> primToPlatformPath: aByteArray [
 	"Convert the supplied UTF8 encoded string to the platform encoded equivalent"
 
@@ -718,19 +695,19 @@ FileAttributesPluginSimulator >> primToPlatformPath: aByteArray [
 	^self signalError: error for: 'primToPlatformPath:'
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> s_IFDIR [
 
 	^S_IFDIR
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> s_IFMT [
 
 	^S_IFMT
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 FileAttributesPluginSimulator >> signalError: error for: aByteArray [
 	"In the simulation, flag the interpreter as failing and return the error code"
 
@@ -746,7 +723,7 @@ FileAttributesPluginSimulator >> signalError: error for: aByteArray [
 
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> simulatedFaPath [
 	"Answer the simulated faPath.
 	See class comments for details."
@@ -754,14 +731,14 @@ FileAttributesPluginSimulator >> simulatedFaPath [
 	^Array new: self sizeOfFaPath.
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> smallIntegerFromOop: anOop [
 	"Answer a copy of the supplied large positive integer Oop"
 
 	^interpreterProxy integerValueOf: anOop
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FileAttributesPluginSimulator >> structFromObject: anOop size: structSize [
 	"Copy the object from the simulated image to the simulator.
 	At the moment, all objects are passed in Arrays with structSize elements."
@@ -774,7 +751,7 @@ FileAttributesPluginSimulator >> structFromObject: anOop size: structSize [
 	^array
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 FileAttributesPluginSimulator >> toOop: anObject [
 	"Convert the supplied simulation object to an object in the simulated image (oop).
 	Use a horrible series of class comparisons to keep it all local for now"

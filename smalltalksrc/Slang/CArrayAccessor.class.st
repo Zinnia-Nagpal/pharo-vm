@@ -1,6 +1,3 @@
-"
-I am used to simulate the indexed access to arrays during plugin simulation.
-"
 Class {
 	#name : 'CArrayAccessor',
 	#superclass : 'CObjectAccessor',

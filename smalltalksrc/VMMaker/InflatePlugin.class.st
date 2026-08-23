@@ -1,6 +1,3 @@
-"
-This plugin implements the one crucial function for efficiently decompressing streams.
-"
 Class {
 	#name : 'InflatePlugin',
 	#superclass : 'InterpreterPlugin',

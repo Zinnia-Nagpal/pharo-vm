@@ -1,6 +1,3 @@
-"
-This is a subclass that uses CPUID to serialize instruction modification.  This is not needed with Intel processors on systems where code and data have the same linear address, hence Cog uses the superclass by default.
-"
 Class {
 	#name : 'CogICacheFlushingIA32Compiler',
 	#superclass : 'CogIA32Compiler',

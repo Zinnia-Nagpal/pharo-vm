@@ -1,1 +1,1 @@
-Package { #name : #VMMakerLoadingDependencies }
+Package { #name : 'VMMakerLoadingDependencies' }

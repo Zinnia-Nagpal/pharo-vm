@@ -1,6 +1,3 @@
-"
-some comment
-"
 Class {
 	#name : 'TLabeledCommentNode',
 	#superclass : 'TParseNode',

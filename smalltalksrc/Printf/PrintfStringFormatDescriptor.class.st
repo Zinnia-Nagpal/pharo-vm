@@ -1,15 +1,16 @@
 Class {
-	#name : #PrintfStringFormatDescriptor,
-	#superclass : #PrintfFormatDescriptor,
-	#category : #Printf
+	#name : 'PrintfStringFormatDescriptor',
+	#superclass : 'PrintfFormatDescriptor',
+	#category : 'Printf',
+	#package : 'Printf'
 }
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfStringFormatDescriptor >> applyOperator: object [
 	^ object
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 PrintfStringFormatDescriptor >> printOn: aStream [
 	super printOn: aStream.
 	self printWidthOn: aStream.

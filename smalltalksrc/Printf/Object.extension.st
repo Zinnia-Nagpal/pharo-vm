@@ -1,12 +1,12 @@
-Extension { #name : #Object }
+Extension { #name : 'Object' }
 
-{ #category : #'*printf' }
+{ #category : '*printf' }
 Object >> asArgumentArrayForFormatString [
 
 	^{self}
 ]
 
-{ #category : #'*printf' }
+{ #category : '*printf' }
 Object >> printLeanString [
 	^self printStringLimitedTo: 256
 ]

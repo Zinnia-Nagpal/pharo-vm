@@ -1,15 +1,16 @@
 Class {
-	#name : #RelativeInstructionPrinter,
-	#superclass : #InstructionPrinter,
+	#name : 'RelativeInstructionPrinter',
+	#superclass : 'InstructionPrinter',
 	#instVars : [
 		'printCode',
 		'labels',
 		'labelling'
 	],
-	#category : #VMMakerLoadingDependencies
+	#category : 'VMMakerLoadingDependencies',
+	#package : 'VMMakerLoadingDependencies'
 }
 
-{ #category : #'instruction decoding' }
+{ #category : 'instruction decoding' }
 RelativeInstructionPrinter >> jump: offset [
 	"Print the Unconditional Jump bytecode."
 
@@ -22,7 +23,7 @@ RelativeInstructionPrinter >> jump: offset [
 			[self print: 'jumpTo: ', (labels at: scanner pc + offset + 1)]
 ]
 
-{ #category : #'instruction decoding' }
+{ #category : 'instruction decoding' }
 RelativeInstructionPrinter >> jump: offset if: condition [ 
 	"Print the Conditional Jump bytecode."
 
@@ -39,7 +40,7 @@ RelativeInstructionPrinter >> jump: offset if: condition [
 				(condition ifTrue: ['jumpTrueTo: '] ifFalse: ['jumpFalseTo: ']), (labels at: scanner pc + offset + 1)]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 RelativeInstructionPrinter >> print: instruction [ 
 	"Append to the receiver a description of the bytecode, instruction." 
 
@@ -66,17 +67,17 @@ RelativeInstructionPrinter >> print: instruction [
 	oldPC := scanner pc
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 RelativeInstructionPrinter >> printCode [
 	^printCode ~~ false
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 RelativeInstructionPrinter >> printCode: aBoolean [
 	printCode := aBoolean
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 RelativeInstructionPrinter >> printInstructionsOn: aStream [
 	"Append to the stream, aStream, a description of each bytecode in the instruction stream."
 	
@@ -92,7 +93,7 @@ RelativeInstructionPrinter >> printInstructionsOn: aStream [
 	super printInstructionsOn: aStream
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 RelativeInstructionPrinter >> printInstructionsOn: aStream do: aBlock [
 	"Append to the stream, aStream, a description of each bytecode in the instruction stream.
 	  Evaluate aBlock with the receiver, the scanner and the stream after each instruction."

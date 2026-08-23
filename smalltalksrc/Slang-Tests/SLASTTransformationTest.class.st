@@ -13,7 +13,6 @@ SLASTTransformationTest >> setUp [
 
 	super setUp.
 	ccg addClass: SLASTTransformationTestClass.
-	"necessary to get the type of sqInt"
 	SpurMemoryManager initBytesPerWord: 8.
 	ccg inferTypes.
 	sLExpandASTVisitor := SLExpandASTVisitor new

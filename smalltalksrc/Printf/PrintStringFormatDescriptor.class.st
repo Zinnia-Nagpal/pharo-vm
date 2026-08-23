@@ -1,15 +1,16 @@
 Class {
-	#name : #PrintStringFormatDescriptor,
-	#superclass : #PrintfStringFormatDescriptor,
-	#category : #Printf
+	#name : 'PrintStringFormatDescriptor',
+	#superclass : 'PrintfStringFormatDescriptor',
+	#category : 'Printf',
+	#package : 'Printf'
 }
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintStringFormatDescriptor >> applyOperator: object [
 	^ object printLeanString
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 PrintStringFormatDescriptor >> printOn: aStream [
 	aStream nextPut: $%.
 	flush == #leftFlush ifTrue: [aStream nextPut: $-].

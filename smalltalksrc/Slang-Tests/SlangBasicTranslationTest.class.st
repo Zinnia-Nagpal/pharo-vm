@@ -107,6 +107,13 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	^ true
 ]
 
+{ #category : 'tests' }
+SlangBasicTranslationTest >> testAncilliaryClassesDoesNotIncludeExtraVMClass [
+	"ExtraVMClass gets its own dedicated file via generateExtraFile.
+	 It must NOT be in ancilliaryClasses, or f() gets duplicated into cointerp.c too."
+	self deny: (CoInterpreter ancilliaryClasses includes: ExtraVMClass)
+]
+
 { #category : 'tests-method' }
 SlangBasicTranslationTest >> testApiMethodsWithConflictingName [
 	
@@ -1204,6 +1211,29 @@ methodCallingCFunction(void)
 	function(methodWithInlinePragma());
 	return 0;
 }'
+]
+
+{ #category : 'tests' }
+SlangBasicTranslationTest >> testExtraFileContainsFFunction [
+	| outputDir maker extraContent |
+	outputDir := FileLocator temp asFileReference / 'test-vm-gen'.
+	outputDir ensureCreateDirectory.
+	maker := PharoVMMaker on: CoInterpreter outputDirectory: outputDir fullName.
+	maker generateExtraFile.
+	extraContent := (outputDir / 'generated' / '64' / 'vm' / 'src' / 'extra.c') contents.
+	self assert: (extraContent includesSubstring: 'f(void)').
+	outputDir deleteAll.
+]
+
+{ #category : 'tests' }
+SlangBasicTranslationTest >> testExtraFileIsGenerated [
+	| outputDir maker |
+	outputDir := FileLocator temp asFileReference / 'test-vm-gen'.
+	outputDir ensureCreateDirectory.
+	maker := PharoVMMaker on: CoInterpreter outputDirectory: outputDir fullName.
+	maker generateExtraFile.
+	self assert: (outputDir / 'generated' / '64' / 'vm' / 'src' / 'extra.c') exists.
+	outputDir deleteAll.
 ]
 
 { #category : 'tests-goto' }
@@ -5570,24 +5600,21 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
 { #category : 'tests-builtins' }
 SlangBasicTranslationTest >> testSendStructAccessorWithReservedWordSelector [
-	"Tests if the renaming of the accessors impacts the struct accessing"
 
-	| translation send |
-	generator addStructClasses: { MockVMStructWithReservedWords }.
-	generator renameKeywordsConflicts.
-
+	| tmp1 tmp2 tmp4 |
+	generator
+		addStructClasses: { MockVMStructWithReservedWords };
+		renameKeywordsConflicts.
+	tmp4 := Dictionary new.
+	tmp4 at: 'structInstance' put: 'MockVMStructWithReservedWords*'.
 	generator pushScope:
-		(TStatementListNode new addDeclarations: (Dictionary new
-				  at: 'structInstance' put: 'MockVMStructWithReservedWords*';
-				  yourself)).
-	send := TSendNode
+		(TStatementListNode new addDeclarations: tmp4 yourself).
+	tmp2 := TSendNode
 		        receiver: (TVariableNode named: 'structInstance')
 		        selector: #case
 		        arguments: {  }.
-
-	translation := self translate: send.
-
-	self assert: translation equals: '(structInstance->case_1)'
+	tmp1 := self translate: tmp2.
+	self assert: tmp1 equals: '(structInstance->case_1)'
 ]
 
 { #category : 'tests-assignment' }
@@ -6380,17 +6407,15 @@ SlangBasicTranslationTest >> testSendWordSize [
 
 { #category : 'tests-builtins' }
 SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
-	"Tests if the struct field is renamed when it's a reserved word"
 
-	| translation |
-	
-	generator addStructClasses: { MockVMStructWithReservedWords }.
-	generator renameKeywordsConflicts.
-	generator vmClass: VMClass.
-
-	translation := String streamContents: [ :s | generator emitCTypesOn: s ].
-
-	self assert: translation equals: 'typedef struct {
+	| tmp1 |
+	generator
+		addStructClasses: { MockVMStructWithReservedWords };
+		renameKeywordsConflicts;
+		vmClass: VMClass.
+	tmp1 := String streamContents: [ :arg1 |
+		        generator emitCTypesOn: arg1 ].
+	self assert: tmp1 equals: 'typedef struct {
 	char *foo;
 	char *case_1;
  } MockVMStructWithReservedWords;

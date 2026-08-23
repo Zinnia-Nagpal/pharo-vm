@@ -810,12 +810,12 @@ ProcessorSimulator >> stackValueBytesAt: position [
 { #category : 'accessing' }
 ProcessorSimulator >> stackValues [
 
-	| initialValue |
-	initialValue := self smalltalkStackPointerRegisterValue.
-
-	^ (1 to: 30) collect: [ :anIndex |
-		VMMachineCodeDebuggerStackItem address: initialValue + (memory wordSize * (anIndex - 1)) on: self.
-	]
+	| tmp1 |
+	tmp1 := self smalltalkStackPointerRegisterValue.
+	^ (1 to: 30) collect: [ :arg1 |
+			  VMMachineCodeDebuggerStackItem
+				  address: tmp1 + (memory wordSize * (arg1 - 1))
+				  on: self ]
 ]
 
 { #category : 'simulation-support' }

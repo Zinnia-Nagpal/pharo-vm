@@ -1,6 +1,6 @@
 Class {
-	#name : #PrintfFormatDescriptor,
-	#superclass : #Object,
+	#name : 'PrintfFormatDescriptor',
+	#superclass : 'Object',
 	#instVars : [
 		'flush',
 		'width',
@@ -10,10 +10,11 @@ Class {
 		'Flags',
 		'Operators'
 	],
-	#category : #Printf
+	#category : 'Printf',
+	#package : 'Printf'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 PrintfFormatDescriptor class >> initialize [
 	"PrintfFormatDescriptor initialize"
 	Operators := Dictionary new.
@@ -33,12 +34,12 @@ PrintfFormatDescriptor class >> initialize [
 	Flags at: $0 put: #zero
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PrintfFormatDescriptor class >> new [
 	^ super new initialize
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PrintfFormatDescriptor class >> newFrom: desc [
 	| myself |
 	myself := self new.
@@ -48,7 +49,7 @@ PrintfFormatDescriptor class >> newFrom: desc [
 	^ myself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PrintfFormatDescriptor class >> scanFrom: stream [
 	| desc |
 	desc := self new.
@@ -64,28 +65,28 @@ PrintfFormatDescriptor class >> scanFrom: stream [
 	^ desc
 ]
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfFormatDescriptor >> applyOperator: object [
 	self subclassResponsibility
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> flush [
 	^ flush
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 PrintfFormatDescriptor >> initialize [
 	flush := #rightFlush.
 	width := 0
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfFormatDescriptor >> leftFlush [
 	flush := #leftFlush
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> operator: char [
 	| myself |
 	myself := (Smalltalk at: (Operators at: char)) newFrom: self.
@@ -93,39 +94,39 @@ PrintfFormatDescriptor >> operator: char [
 	^ myself
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> padding [
 	^ Character space
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> precision [
 	^ precision
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> precision: anInteger [
 	precision := anInteger
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 PrintfFormatDescriptor >> printOn: aStream [
 	aStream nextPut: $%.
 	flush == #leftFlush ifTrue: [aStream nextPut: $-]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 PrintfFormatDescriptor >> printWidthOn: aStream [
 	width ~= 0 ifTrue: [width printOn: aStream].
 	precision isNil ifFalse: [aStream nextPut: $.. precision printOn: aStream]
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfFormatDescriptor >> radix [
 	^ (PrintfNumberFormatDescriptor newFrom: self) radix
 ]
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfFormatDescriptor >> render: object [
 	| string |
 	string := self applyOperator: object.
@@ -139,21 +140,21 @@ PrintfFormatDescriptor >> render: object [
 		with: string
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfFormatDescriptor >> rightFlush [
 	flush := #rightFlush
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> setOperator: char [
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfFormatDescriptor >> space [
 	^ (PrintfNumberFormatDescriptor newFrom: self) space
 ]
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfFormatDescriptor >> startIndexOfCopyReplaceWithStringSize: anInteger [
 
 	|start|
@@ -163,7 +164,7 @@ PrintfFormatDescriptor >> startIndexOfCopyReplaceWithStringSize: anInteger [
 
 ]
 
-{ #category : #rendering }
+{ #category : 'rendering' }
 PrintfFormatDescriptor >> stopIndexOfCopyReplaceWithStringSize: anInteger [
 
 	| stop |
@@ -172,22 +173,22 @@ PrintfFormatDescriptor >> stopIndexOfCopyReplaceWithStringSize: anInteger [
 	^stop min: width
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> stringLength [
 	^ precision isNil ifTrue: [0] ifFalse: [precision]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> width [
 	^ width
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PrintfFormatDescriptor >> width: anInteger [
 	width := anInteger
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 PrintfFormatDescriptor >> zero [
 	^ (PrintfNumberFormatDescriptor newFrom: self) zero
 ]

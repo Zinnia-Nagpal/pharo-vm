@@ -1,16 +1,3 @@
-"
-A CogSSBytecodeFixup extends CogBytecodeFixup with state to merge the stack at control-flow joins.  At a join the code generator must ensure that the stack is spilled to the same point along both branches and that the simStackPtr is correct.
-
-Instance Variables
-	simStackPtr:					<Integer>
-	isTargetOfBackwardBranch:		<Boolean>
-
-simStackPtr
-	- the simStackPtr at the jump to this fixup.  It should either agree with the incoming fixup if control continues, or replace the simStackPtr if control doesn't continue (the incoming control flow ended with a return)
-
-isTargetOfBackwardBranch:
-	- if true the fixup is the target of some backward branch
-"
 Class {
 	#name : 'CogSSBytecodeFixup',
 	#superclass : 'CogBytecodeFixup',

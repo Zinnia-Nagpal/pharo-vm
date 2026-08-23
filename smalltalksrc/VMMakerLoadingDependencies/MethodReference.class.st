@@ -1,15 +1,6 @@
-"
-A MethodReference is is a lightweight proxy for a CompiledMethod.  Has methods for pointed to the CompileMethod's source statements, byte codes. Is heavily used by Tools.
-
-Instance Variables
-	classIsMeta:		     Boolean class vs. instance
-	classSymbol:		Symbol for method's class (without class keyword if meta)
-	methodSymbol:		Symbol for method's selector
-	stringVersion:		'Class>>selector:' format
-"
 Class {
-	#name : #MethodReference,
-	#superclass : #Object,
+	#name : 'MethodReference',
+	#superclass : 'Object',
 	#instVars : [
 		'classSymbol',
 		'classIsMeta',
@@ -21,26 +12,27 @@ Class {
 	#classVars : [
 		'InvalidReference'
 	],
-	#category : #VMMakerLoadingDependencies
+	#category : 'VMMakerLoadingDependencies',
+	#package : 'VMMakerLoadingDependencies'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MethodReference class >> class: aClass selector: aSelector [
 	^ self class: aClass selector: aSelector environment: aClass environment.
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MethodReference class >> class: aClass selector: aSelector environment: anEnvironment [
 	^ self new setStandardClass: aClass methodSymbol: aSelector environment: anEnvironment.
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 MethodReference class >> cleanUp: aggressive [
 
 	aggressive ifTrue: [InvalidReference := nil].
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 MethodReference class >> invalid [
 	"Creates an invalid method reference to avoid the usage of nil."
 	
@@ -52,7 +44,7 @@ MethodReference class >> invalid [
 			stringVersion: '<The Invalid Method Reference>']
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 MethodReference >> <= anotherMethodReference [
 
 	classSymbol < anotherMethodReference classSymbol ifTrue: [^true].
@@ -61,7 +53,7 @@ MethodReference >> <= anotherMethodReference [
 	^methodSymbol <= anotherMethodReference methodSymbol
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 MethodReference >> = anotherMethodReference [ 
 	"Answer whether the receiver and the argument represent the 
 	same object."
@@ -72,7 +64,7 @@ MethodReference >> = anotherMethodReference [
 		and: [self environment == anotherMethodReference environment]]]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> actualClass [ 
 	^self environment at: classSymbol ifPresent: [ :actualClass |
 		classIsMeta
@@ -80,25 +72,25 @@ MethodReference >> actualClass [
 			ifFalse: [ actualClass ] ]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 MethodReference >> asCodeReference [
 
 	^ self
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 MethodReference >> asString [
 
 	^(stringVersion ifNil: [ self stringVersionDefault ]) asString
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 MethodReference >> asStringOrText [
 
 	^stringVersion ifNil: [ self stringVersionDefault ]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 MethodReference >> asValid [
 	"Sometimes persistent MethodReferences may become stale after a refactoring which moved some methods to a superclass.  This method answers the new valid MethodReference if that happened."
 	^ self isValid
@@ -109,42 +101,42 @@ MethodReference >> asValid [
 			cm ifNotNil: [ cm methodReference ] ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> category [
 	"Answers the class category (cached for reuse via MC and other tools)"
 	^ category ifNil: [category := self actualClass organization categoryOfElement: methodSymbol]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MethodReference >> category: aSymbol [
 	category := aSymbol
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MethodReference >> classIsMeta [
 
 	^classIsMeta
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> classSymbol [
 
 	^classSymbol
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> compiledMethod [
 	^self actualClass compiledMethodAt: methodSymbol ifAbsent: nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> environment [
 	^ environment ifNil: [
 		"We will probably have MethodReferences already instantiated when this commit lands. We lazily move these over to the new, Environment aware, order of things."
 		environment := Smalltalk globals].
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 MethodReference >> hash [
 	"Answer a SmallInteger whose value is related to the receiver's  
 	identity."
@@ -152,19 +144,19 @@ MethodReference >> hash [
 		bitXor: self methodSymbol hash
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MethodReference >> isClassReference [
 
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MethodReference >> isMethodReference [
 
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MethodReference >> isValid [
 	"Answer whether the receiver represents a current selector or Comment"
 
@@ -175,13 +167,13 @@ MethodReference >> isValid [
 		[methodSymbol == #Comment]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> methodSymbol [
 
 	^methodSymbol
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 MethodReference >> printOn: aStream [
 	| actualClass |
 	"Print the receiver on a stream"
@@ -191,13 +183,13 @@ MethodReference >> printOn: aStream [
 	aStream nextPutAll: ' ', actualClass, ' >> ', methodSymbol printString.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> selector [
 
 	^methodSymbol
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MethodReference >> setClass: aClass methodSymbol: methodSym stringVersion: aString [ 
 
 	classSymbol := aClass theNonMetaClass name.
@@ -207,13 +199,13 @@ MethodReference >> setClass: aClass methodSymbol: methodSym stringVersion: aStri
 	stringVersion := aString.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MethodReference >> setClassAndSelectorIn: csBlock [
 
 	^csBlock value: self actualClass value: methodSymbol
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MethodReference >> setClassSymbol: classSym classIsMeta: isMeta methodSymbol: methodSym stringVersion: aString [ 
 
 	classSymbol := classSym.
@@ -222,7 +214,7 @@ MethodReference >> setClassSymbol: classSym classIsMeta: isMeta methodSymbol: me
 	stringVersion := aString.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MethodReference >> setStandardClass: aClass methodSymbol: methodSym [
 
 	classSymbol := aClass theNonMetaClass name.
@@ -232,7 +224,7 @@ MethodReference >> setStandardClass: aClass methodSymbol: methodSym [
 	stringVersion := nil.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MethodReference >> setStandardClass: aClass methodSymbol: aSelector environment: anEnvironment [
 	classSymbol := aClass instanceSide name.
 	classIsMeta := aClass isMeta.
@@ -241,42 +233,42 @@ MethodReference >> setStandardClass: aClass methodSymbol: aSelector environment:
 	stringVersion := nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> source [
 	^ (self actualClass sourceCodeAt: methodSymbol) asString withSqueakLineEndings
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> sourceCode [
 
 	^ self actualClass sourceCodeAt: self methodSymbol
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> sourceString [
 
 	^ self sourceCode asString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> stringVersion [
 
 	^stringVersion ifNil: [self asStringOrText]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> stringVersion: aString [
 
 	stringVersion := aString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> stringVersionDefault [
 
 	^classSymbol, (classIsMeta ifTrue: [ ' class ' ] ifFalse: [' ']), methodSymbol  
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MethodReference >> timeStamp [
 	^ self compiledMethod timeStamp
 ]

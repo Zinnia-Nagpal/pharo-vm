@@ -1,6 +1,3 @@
-"
-Float math plugin simulation for the VM simulator
-"
 Class {
 	#name : 'FloatMathPluginSimulator',
 	#superclass : 'FloatMathPlugin',

@@ -1,9 +1,3 @@
-"
-This class oversees the translation of a subset of Smalltalk to C, allowing the comforts of Smalltalk during development and the efficiency and portability of C for the resulting interpreter.  
-See VMMaker for more useful info
-
-# toto
-"
 Class {
 	#name : 'CCodeGenerator',
 	#superclass : 'Object',
@@ -632,10 +626,12 @@ CCodeGenerator >> cLiteralForInteger: anInteger hex: aBoolean [
 ]
 
 { #category : 'C code generator' }
-CCodeGenerator >> cLiteralForPrintfString: aString [
-	^(('"', (PrintfFormatString new setFormat: aString) transformForVMMaker, '"')
-		copyReplaceAll: (String with: Character cr) with: '\n')
-			copyReplaceAll: (String with: Character tab) with: '\t'
+CCodeGenerator >> cLiteralForPrintfString: arg1 [
+
+	^ ('"' , (PrintfFormatString new setFormat: arg1) transformForVMMaker
+	   , '"' copyReplaceAll: (String with: Character cr) with: '\n')
+		  copyReplaceAll: (String with: Character tab)
+		  with: '\t'
 ]
 
 { #category : 'C code generator' }

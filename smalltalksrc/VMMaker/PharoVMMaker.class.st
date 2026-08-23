@@ -1,6 +1,3 @@
-"
-Main entry point to generate the VM code from the command line.
-"
 Class {
 	#name : 'PharoVMMaker',
 	#superclass : 'Object',
@@ -153,6 +150,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 			external:
 				#( NewFilePlugin FilePlugin SurfacePlugin FloatArrayPlugin );
 			generateInterpreterFile;
+			generateExtraFile;
 			generateCogitFiles.
 		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ] ]
 		valueSupplyingAnswer: true

@@ -1,6 +1,3 @@
-"
-Subclass of CCodeGenerator, used in connection with TestInterpreterPlugin to generate named primitives with type coercion specifications. See the plugins implemeted as subclasses of TestInterpreterPlugin
-"
 Class {
 	#name : 'SmartSyntaxPluginCodeGenerator',
 	#superclass : 'VMPluginCodeGenerator',

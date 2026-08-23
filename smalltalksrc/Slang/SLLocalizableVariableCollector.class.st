@@ -1,22 +1,3 @@
-"
-I am a visitor starting from a statement that accumulates all used variables that should be localized/externalized around the statement.
-I use a SLCallGraphFreeVariableCollector to visit methods calls I find in the statement.
-
-CAREFUL: I am a stateful AST visitor and I cannot be reused.
-
-Once instantiated and used, the variables are accessed through the #localizableVariables message.
-
-# Usage
-
-```smalltalk
-collector := SLLocalizableVariableCollector
-             inCodeGenerator: codeGenerator
-             localizableCandidateVariables: replacementDict keys
-             callgraphVariableCollector: callgraphVariableCollector.
-aStatement accept: collector.
-collector localizableVariables.
-```
-"
 Class {
 	#name : 'SLLocalizableVariableCollector',
 	#superclass : 'Object',

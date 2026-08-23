@@ -1,6 +1,3 @@
-"
-MIPS opcodes and register names.
-"
 Class {
 	#name : 'MIPSConstants',
 	#superclass : 'SharedPool',

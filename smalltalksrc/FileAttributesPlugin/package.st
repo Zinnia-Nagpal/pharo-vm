@@ -1,1 +1,1 @@
-Package { #name : #FileAttributesPlugin }
+Package { #name : 'FileAttributesPlugin' }

@@ -1,30 +1,3 @@
-"
-Calls become statements and nested calls are assigned to variables.
-	
-	For example, I transform statements of the form:
-	
-	> self foo: self nonInlinedMethodUsingAutolocalizedVariable
-	
-	into
-	
-	> t0 := self nonInlinedMethodUsingAutolocalizedVariable
-	> t1 := self foo: t0
-	
-	Such localization happens on a per-block basis:
-	
-	> someExpression ifTrue: [
-	>		self foo: self nonInlinedMethodUsingAutolocalizedVariable
-	> ]
-
-	into
-	
-	> someExpression ifTrue: [
-	> 	| t0 t1 |
-	> 	t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-	> 	t1 := self foo: t0
-	> ]
-	""
-"
 Class {
 	#name : 'SLLinearisationVisitor',
 	#superclass : 'Object',
