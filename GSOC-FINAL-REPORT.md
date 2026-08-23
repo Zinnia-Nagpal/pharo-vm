@@ -130,28 +130,7 @@ aCCodeGenerator
 	addHeaderFile: '"cointerp.h"';
 	addHeaderFile: '"extra.h"';
 	addHeaderFile: '"cogit.h"'.
-```## Key Links
-
-- Fork: <https://github.com/Zinnia-Nagpal/pharo-vm>
-- Separate compilation proof of concept (full history): <https://github.com/Zinnia-Nagpal/pharo-vm/tree/extra-file>
-- Documentation: <https://github.com/Zinnia-Nagpal/pharo-vm/blob/extra-file/doc/how-to-generate-extra-c-file.md>
-- 36-test-fix branch (merged): <https://github.com/Zinnia-Nagpal/pharo-vm/commits/fix-ml-localization-tests>
-
-**Key commits on `extra-file`** (for a quicker path through the history than
-scrolling the full branch):
-- [`fce71e873`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/fce71e873) — Initial `ExtraVMClass` and `extra.c` file created
-- [`fc780d8cf`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/fc780d8cf) — Added `extra.c` to the cmake build
-- [`774b09332`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/774b09332) — Generated `extra.h` and includes
-- [`62f899c5f`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/62f899c5f) — Added `ExtraVMClass` to `ancilliaryClasses` (later found to be wrong — see Challenges)
-- [`4fe76d901`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/4fe76d901) — Removed instance-side `f` to fix a duplicate C symbol
-- [`cab3daaf9`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/cab3daaf9) — Final working approach: call `f()` directly, no `new`, no class-side method
-- [`37ff92da4`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/37ff92da4) — Final correction: removed `ExtraVMClass` from `ancilliaryClasses`
-- [`34088f284`](https://github.com/Zinnia-Nagpal/pharo-vm/commit/34088f284) — Added tests
-
-Earlier draft attempts at this same proof of concept exist on
-`separate-compilation`, `separate-compilation-v2`, and
-`separate-compilation-clean`; `extra-file` is the final, consolidated,
-working version and is the one referenced throughout this report.
+```
 
 Without this, the compiler fails with `implicit declaration of function 'f'`
 even though `extra.h` correctly declares it — nothing was including it.
@@ -171,6 +150,7 @@ InterpreterPrimitives >> primitiveAdd [
 ```
 
 `f()` is called as a plain global C function — no receiver, no `new`.
+
 
 #### g) Verified end-to-end at runtime
 
