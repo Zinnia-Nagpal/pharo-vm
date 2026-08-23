@@ -7,7 +7,7 @@ and how that file's functions can be called from the main interpreter file
 minimal example class, `ExtraVMClass`, whose only job is to define one function,
 `f()`, that returns `42`.
 
-This is a **proof of concept for separate compilation in Slang** — a step toward
+This is a **proof of concept for separate compilation in Slang** a step toward
 splitting the monolithic, tens-of-thousands-of-lines interpreter file into smaller,
 per-subsystem files (e.g. eventually `spurMemoryManager.c`, `cogit.c`, etc.).
 
